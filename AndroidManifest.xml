@@ -7,13 +7,22 @@
     <uses-sdk
         android:minSdkVersion="8"
         android:targetSdkVersion="17" />
-  <uses-permission android:name="android.permission.CAMERA"/>
 
-    <uses-feature android:name="android.hardware.camera" android:required="false"/>
-    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false"/>
-    <uses-feature android:name="android.hardware.camera.front" android:required="false"/>
-    <uses-feature android:name="android.hardware.camera.front.autofocus" android:required="false"/>
-    
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.camera.autofocus"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.camera.front"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.camera.front.autofocus"
+        android:required="false" />
+
     <application
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
@@ -27,6 +36,18 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
+        <activity
+            android:name=".CameraActivity"
+            android:label="@string/title_activity_camera" >
+        </activity>
+        <activity
+            android:name=".ImageProcessingActivity"
+            android:label="@string/title_activity_image_processing" >
+        </activity>
+        <activity
+            android:name=".SelectPictureActivity"
+            android:label="@string/title_activity_select_picture" >
         </activity>
     </application>
 
