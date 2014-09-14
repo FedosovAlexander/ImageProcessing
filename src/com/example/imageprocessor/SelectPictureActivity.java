@@ -1,5 +1,8 @@
 package com.example.imageprocessor;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+
 import android.app.Activity;
 import android.content.Intent;
 import android.database.Cursor;
@@ -35,7 +38,10 @@ public class SelectPictureActivity extends Activity {
             @Override
             public void onClick(View arg0) {
             	Intent intent = new Intent(getApplicationContext(), ImageProcessingActivity.class);
-            	intent.putExtra("ImageRGBA",mImageRGBA);
+            	ByteArrayOutputStream bStream=new ByteArrayOutputStream();
+            	mImageRGBA.compress(Bitmap.CompressFormat.PNG, 100, bStream);
+            	byte[] byteArray = bStream.toByteArray();
+            	intent.putExtra("ImageRGBA",byteArray);
             	startActivity(intent);
             }
         });

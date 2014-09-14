@@ -59,8 +59,10 @@ public class CameraActivity extends Activity implements CvCameraViewListener2
 	            	mImageRGBA= Bitmap.createBitmap(mMat.cols(),mMat.rows(),Bitmap.Config.ARGB_8888);
 	            	Utils.matToBitmap(mMat,mImageRGBA);
 	            	Intent intent = new Intent(getApplicationContext(), ImageProcessingActivity.class);
-	            	intent.putExtra("ImageRGBA",mImageRGBA);
-	            	startActivity(intent);
+	            	ByteArrayOutputStream bStream=new ByteArrayOutputStream();
+	            	mImageRGBA.compress(Bitmap.CompressFormat.PNG, 100, bStream);
+	            	byte[] byteArray = bStream.toByteArray();
+	            	intent.putExtra("ImageRGBA",byteArray);	            	startActivity(intent);
 	            }
 			});
 		 mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.camera_view);
