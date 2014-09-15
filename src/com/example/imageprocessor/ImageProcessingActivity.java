@@ -1,6 +1,7 @@
 package com.example.imageprocessor;
 
 import java.io.ByteArrayOutputStream;
+import java.nio.ByteBuffer;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -27,7 +28,7 @@ public class ImageProcessingActivity extends Activity {
 		mBasicImage = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.length);
 		setContentView(R.layout.activity_image_processing);
 		mImageView=(ImageView)findViewById(R.id.image_view);
-		mImageView.setImageBitmap(mBasicImage);
+		//mImageView.setImageBitmap(mBasicImage);
 		mRefreshButton=(Button)findViewById(R.id.refresh_button);
 		mRefreshButton.setOnClickListener( new View.OnClickListener() {
             public void onClick(View v) {
@@ -49,21 +50,38 @@ public class ImageProcessingActivity extends Activity {
       return super.onCreateOptionsMenu(menu);
     }
     
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-     
-    	switch (item.getItemId()){
-    	case 3:{ 
-    	      Toast.makeText(this, item.getTitle(), Toast.LENGTH_SHORT).show();
-    		ByteArrayOutputStream bStream=new ByteArrayOutputStream();
-        	mBasicImage.compress(Bitmap.CompressFormat.PNG, 100, bStream);
-        	byte[] byteArray = bStream.toByteArray();
-        	byte[] arr=byteArray;
-    		ImgProcessor.convertARGBToGrayscale(mBasicImage.getWidth(), mBasicImage.getHeight(), byteArray, arr);
-    		mImageView.setImageBitmap(BitmapFactory.decodeByteArray(arr, 0, arr.length));           
-    	}
-    	}
-      return super.onOptionsItemSelected(item);
-    }
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+
+		switch (item.getItemId()) {
+		case 3: {
+			int[] pixels = new int[mBasicImage.getWidth()* mBasicImage.getHeight()];
+			mBasicImage.getPixels(pixels, 0, mBasicImage.getWidth(), 0, 0,mBasicImage.getWidth(), mBasicImage.getHeight());
+			byte[] argbimage = new byte[4 * mBasicImage.getWidth()* mBasicImage.getHeight()];
+			byte[] grayimage = new byte[4 * mBasicImage.getWidth()* mBasicImage.getHeight()];
+			for (int i = 0; i < mBasicImage.getWidth()
+					* mBasicImage.getHeight(); i++) {
+				grayimage[4 * i + 3] = argbimage[4 * i + 3] = (byte) ((pixels[i]) & 0xFF);
+				grayimage[4 * i + 2] = argbimage[4 * i + 2] = (byte) (((pixels[i]) >> 8) & 0xFF);
+				grayimage[4 * i + 1] = argbimage[4 * i + 1] = (byte) (((pixels[i]) >> 16) & 0xFF);
+				grayimage[4 * i] = argbimage[4 * i] = (byte) (((pixels[i]) >> 24) & 0xFF);
+			}
+			ImgProcessor.convertARGBToGrayscale(mBasicImage.getWidth(),mBasicImage.getHeight(), argbimage, grayimage);
+			int[] img = new int[mBasicImage.getWidth()
+					* mBasicImage.getHeight()];
+			for (int i = 0; i < mBasicImage.getWidth()
+					* mBasicImage.getHeight(); i++) {
+				img[i] = grayimage[4 * i + 3] & 0xFF
+						| (grayimage[4 * i + 2] & 0xFF) << 8
+						| (grayimage[4 * i + 1] & 0xFF) << 16
+						| (grayimage[4 * i] & 0xFF) << 24;
+			}
+			mImageView.setImageBitmap(Bitmap.createBitmap(img,
+					mBasicImage.getWidth(), mBasicImage.getHeight(),
+					Bitmap.Config.ARGB_8888));
+		}
+		}
+		return super.onOptionsItemSelected(item);
+	}
     
 }

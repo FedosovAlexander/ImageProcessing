@@ -1,24 +1,36 @@
 #include <jni.h>
 #include <com_example_imageprocessor_ImgProcessor.h>
+#include <android/log.h>
+#include <stdio.h>
 
 
 JNIEXPORT void JNICALL Java_com_example_imageprocessor_ImgProcessor_convertARGBToGrayscale
 (JNIEnv * env, jobject obj, jint width, jint height, jbyteArray argb,jbyteArray gray){
  int i,result;
- jint arraySize;
- jbyte argbimage[(*env)->GetArrayLength(env,argb)];
- jbyte grayimage[(*env)->GetArrayLength(env,argb)];
- arraySize=(*env)->GetArrayLength(env,argb);
+ jint argbarraySize,grayarraySize;
+ jbyte* argbimage;
+ jbyte* grayimage;
+ argbarraySize=(*env)->GetArrayLength(env,argb);
+ grayarraySize=(*env)->GetArrayLength(env,gray);
 
-     (*env)->GetByteArrayRegion(env, argb, 0, arraySize, argbimage);
-     (*env)->GetByteArrayRegion(env, argb, 0, arraySize, grayimage);
- 	 for(i=0;i<=(arraySize-4);i+=4){
+
+ 	 argbimage=(*env)->GetByteArrayElements(env,argb,NULL);
+ 	 grayimage=(*env)->GetByteArrayElements(env,gray,NULL);
+ 	 i=0;
+ 	 (unsigned char*)argbimage;
+ 	 (unsigned char*)grayimage;
+ 	 while(i<=(argbarraySize-4)){
  		 grayimage[i]=argbimage[i];
- 		 result= ((66 * argbimage[i+1] + 129 * argbimage[i+2] +  25 * argbimage[i+3] + 128) >> 8)+16;
+  	 //	__android_log_write(ANDROID_LOG_DEBUG, "NativeFunction", "accessed successfully");//Or ANDROID_LOG_INFO, ..
+
+ 		result= ((66 *(unsigned char) argbimage[i+1] + 129 * (unsigned char)argbimage[i+2] +  25 *(unsigned char) argbimage[i+3] + 128) >> 8)+16;
  		 if(result>255){result=255;}
- 		 if(result<0){result=0;}
- 		 grayimage[i+1]=grayimage[i+2]=grayimage[i+3]=(jbyte)result;
+ 		if(result<0){result=0;}
+ 		grayimage[i+1]=grayimage[i+2]=grayimage[i+3]=(unsigned char)result;
+ 		i+=4;
  	 }
+ 	 (jbyte*)grayimage;
+ 	 (jbyte*)argbimage;
  	(*env)->ReleaseByteArrayElements(env, argb, argbimage, 0);
  	(*env)->ReleaseByteArrayElements(env, gray, grayimage, 0);
 }
