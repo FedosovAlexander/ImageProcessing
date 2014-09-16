@@ -18,7 +18,15 @@ obj/local/armeabi/objs/imgprocessor/ImgProcessor.o: jni/ImgProcessor.c \
  /home/alexander/NVPACK/android-ndk-r9d/platforms/android-17/arch-arm/usr/include/asm/types.h \
  /home/alexander/NVPACK/android-ndk-r9d/platforms/android-17/arch-arm/usr/include/linux/types.h \
  /home/alexander/NVPACK/android-ndk-r9d/platforms/android-17/arch-arm/usr/include/machine/kernel.h \
- /home/alexander/NVPACK/android-ndk-r9d/platforms/android-17/arch-arm/usr/include/sys/sysmacros.h
+ /home/alexander/NVPACK/android-ndk-r9d/platforms/android-17/arch-arm/usr/include/sys/sysmacros.h \
+ /home/alexander/NVPACK/android-ndk-r9d/platforms/android-17/arch-arm/usr/include/math.h \
+ /home/alexander/NVPACK/android-ndk-r9d/platforms/android-17/arch-arm/usr/include/limits.h \
+ /home/alexander/NVPACK/android-ndk-r9d/platforms/android-17/arch-arm/usr/include/sys/limits.h \
+ /home/alexander/NVPACK/android-ndk-r9d/platforms/android-17/arch-arm/usr/include/linux/limits.h \
+ /home/alexander/NVPACK/android-ndk-r9d/platforms/android-17/arch-arm/usr/include/machine/internal_types.h \
+ /home/alexander/NVPACK/android-ndk-r9d/platforms/android-17/arch-arm/usr/include/machine/limits.h \
+ /home/alexander/NVPACK/android-ndk-r9d/platforms/android-17/arch-arm/usr/include/sys/syslimits.h \
+ /home/alexander/NVPACK/android-ndk-r9d/platforms/android-17/arch-arm/usr/include/asm/page.h
 
 /home/alexander/NVPACK/android-ndk-r9d/platforms/android-17/arch-arm/usr/include/jni.h:
 
@@ -59,3 +67,19 @@ jni/com_example_imageprocessor_ImgProcessor.h:
 /home/alexander/NVPACK/android-ndk-r9d/platforms/android-17/arch-arm/usr/include/machine/kernel.h:
 
 /home/alexander/NVPACK/android-ndk-r9d/platforms/android-17/arch-arm/usr/include/sys/sysmacros.h:
+
+/home/alexander/NVPACK/android-ndk-r9d/platforms/android-17/arch-arm/usr/include/math.h:
+
+/home/alexander/NVPACK/android-ndk-r9d/platforms/android-17/arch-arm/usr/include/limits.h:
+
+/home/alexander/NVPACK/android-ndk-r9d/platforms/android-17/arch-arm/usr/include/sys/limits.h:
+
+/home/alexander/NVPACK/android-ndk-r9d/platforms/android-17/arch-arm/usr/include/linux/limits.h:
+
+/home/alexander/NVPACK/android-ndk-r9d/platforms/android-17/arch-arm/usr/include/machine/internal_types.h:
+
+/home/alexander/NVPACK/android-ndk-r9d/platforms/android-17/arch-arm/usr/include/machine/limits.h:
+
+/home/alexander/NVPACK/android-ndk-r9d/platforms/android-17/arch-arm/usr/include/sys/syslimits.h:
+
+/home/alexander/NVPACK/android-ndk-r9d/platforms/android-17/arch-arm/usr/include/asm/page.h:

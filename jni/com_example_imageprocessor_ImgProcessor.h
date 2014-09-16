@@ -18,18 +18,18 @@ JNIEXPORT void JNICALL Java_com_example_imageprocessor_ImgProcessor_convertARGBT
 /*
  * Class:     com_example_imageprocessor_ImgProcessor
  * Method:    interpolateBilinear
- * Signature: (IIII[B)[B
+ * Signature: (IIII[B[B)V
  */
-JNIEXPORT jbyteArray JNICALL Java_com_example_imageprocessor_ImgProcessor_interpolateBilinear
-  (JNIEnv *, jclass, jint, jint, jint, jint, jbyteArray);
+JNIEXPORT void JNICALL Java_com_example_imageprocessor_ImgProcessor_interpolateBilinear
+  (JNIEnv *, jclass, jint, jint, jint, jint, jbyteArray, jbyteArray);
 
 /*
  * Class:     com_example_imageprocessor_ImgProcessor
  * Method:    interpolateBicubic
- * Signature: (IIII[B)[B
+ * Signature: (IIII[B[B)V
  */
-JNIEXPORT jbyteArray JNICALL Java_com_example_imageprocessor_ImgProcessor_interpolateBicubic
-  (JNIEnv *, jclass, jint, jint, jint, jint, jbyteArray);
+JNIEXPORT void JNICALL Java_com_example_imageprocessor_ImgProcessor_interpolateBicubic
+  (JNIEnv *, jclass, jint, jint, jint, jint, jbyteArray, jbyteArray);
 
 /*
  * Class:     com_example_imageprocessor_ImgProcessor
@@ -42,10 +42,10 @@ JNIEXPORT jbyteArray JNICALL Java_com_example_imageprocessor_ImgProcessor_interp
 /*
  * Class:     com_example_imageprocessor_ImgProcessor
  * Method:    smoothHistogram
- * Signature: ([II)V
+ * Signature: ([I[II)V
  */
 JNIEXPORT void JNICALL Java_com_example_imageprocessor_ImgProcessor_smoothHistogram
-  (JNIEnv *, jclass, jintArray, jint);
+  (JNIEnv *, jclass, jintArray, jintArray, jint);
 
 /*
  * Class:     com_example_imageprocessor_ImgProcessor
