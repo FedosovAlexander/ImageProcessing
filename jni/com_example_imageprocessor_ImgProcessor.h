@@ -50,18 +50,10 @@ JNIEXPORT void JNICALL Java_com_example_imageprocessor_ImgProcessor_smoothHistog
 /*
  * Class:     com_example_imageprocessor_ImgProcessor
  * Method:    binarizeOtsu
- * Signature: (II[B)[B
+ * Signature: (II[B[B[I)V
  */
-JNIEXPORT jbyteArray JNICALL Java_com_example_imageprocessor_ImgProcessor_binarizeOtsu__II_3B
-  (JNIEnv *, jclass, jint, jint, jbyteArray);
-
-/*
- * Class:     com_example_imageprocessor_ImgProcessor
- * Method:    binarizeOtsu
- * Signature: (II[B[B)[B
- */
-JNIEXPORT jbyteArray JNICALL Java_com_example_imageprocessor_ImgProcessor_binarizeOtsu__II_3B_3B
-  (JNIEnv *, jclass, jint, jint, jbyteArray, jbyteArray);
+JNIEXPORT void JNICALL Java_com_example_imageprocessor_ImgProcessor_binarizeOtsu
+  (JNIEnv *, jclass, jint, jint, jbyteArray, jbyteArray, jintArray);
 
 #ifdef __cplusplus
 }

@@ -15,6 +15,9 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import android.text.InputType;
 import android.util.Log;
 import android.view.Display;
@@ -36,6 +39,7 @@ public class ImageProcessingActivity extends Activity {
 	private int mScreenHeight;
 	private int mNewHeight;
 	private int mNewWidth;
+	private int mInterpolation;
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -69,7 +73,7 @@ public class ImageProcessingActivity extends Activity {
       menu.add(0,4,0,"Bilinear interpolation");
       menu.add(0,5,0,"Bicubic spline interpolation");
       menu.add(0,6,0,"Binarize Otsu");
-    
+      menu.add(0,7,0,"k-means klusterisation");
       
       return super.onCreateOptionsMenu(menu);
     }
@@ -120,15 +124,47 @@ public class ImageProcessingActivity extends Activity {
 			mImageView.setImageBitmap(Bitmap.createBitmap(img,mBasicImage.getWidth(), mBasicImage.getHeight(),Bitmap.Config.ARGB_8888));
 			break;
 		}
-		case 4:{
-			showInputHeightDialog();
-			showInputWidthDialog();
+		case 4: {
+			mInterpolation=1;
+			runOnUiThread((new Thread() {
+				@Override
+				public void run() {
+					showInputHeightDialog();
+					showInputWidthDialog();
+			
+				}
+			}));
 			break;
 		}
 		case 5:{
-			showInputHeightDialog();
-			showInputWidthDialog();
+			mInterpolation=2;
+			runOnUiThread((new Thread() {
+				@Override
+				public void run() {
+					showInputHeightDialog();
+					showInputWidthDialog();
+			
+				}
+			}));
 			break;
+		}
+		case 6:{
+			int[] pixels = new int[mBasicImage.getWidth()* mBasicImage.getHeight()];
+			mBasicImage.getPixels(pixels, 0, mBasicImage.getWidth(), 0, 0,mBasicImage.getWidth(), mBasicImage.getHeight());
+			byte[] argbimage = new byte[4 * mBasicImage.getWidth()* mBasicImage.getHeight()];
+			byte[] grayimage = new byte[4 * mBasicImage.getWidth()* mBasicImage.getHeight()];
+			byte[] binarized = new byte[4 * mBasicImage.getWidth()* mBasicImage.getHeight()];
+			convertIntArrayToByteArray(pixels,argbimage);
+			convertIntArrayToByteArray(pixels,grayimage);
+			ImgProcessor.convertARGBToGrayscale(mBasicImage.getWidth(),mBasicImage.getHeight(), argbimage, grayimage);
+			int[] histogram=getHistogram(grayimage);
+			
+			ImgProcessor.binarizeOtsu(mBasicImage.getWidth(), mBasicImage.getHeight(), grayimage, binarized, histogram);
+			int[] img = new int[mBasicImage.getWidth()* mBasicImage.getHeight()];	
+			convertByteArrayToIntArray(img,binarized);
+			mImageView.setImageBitmap(Bitmap.createBitmap(img,mBasicImage.getWidth(), mBasicImage.getHeight(),Bitmap.Config.ARGB_8888));
+			break;
+
 		}
 		}
 		return super.onOptionsItemSelected(item);
@@ -259,18 +295,15 @@ public class ImageProcessingActivity extends Activity {
 	builder.setPositiveButton("OK", new DialogInterface.OnClickListener() { 
 	    @Override
 	    public void onClick(DialogInterface dialog, int which) {
+	    	//Looper.prepare();
 	        mNewHeight = Integer.parseInt(input.getText().toString());
-	        int[] pixels = new int[mBasicImage.getWidth()* mBasicImage.getHeight()];
-			mBasicImage.getPixels(pixels, 0, mBasicImage.getWidth(), 0, 0,mBasicImage.getWidth(), mBasicImage.getHeight());
-			byte[] argbimage = new byte[4 * mBasicImage.getWidth()* mBasicImage.getHeight()];
-			convertIntArrayToByteArray(pixels,argbimage);
-	        byte[] newargbimage=new byte[mNewWidth*mNewHeight*4];
-	        ImgProcessor.interpolateBicubic(mBasicImage.getWidth(), mBasicImage.getHeight(), mNewWidth, mNewHeight,argbimage, newargbimage);
-			//ImgProcessor.interpolateBilinear(mBasicImage.getWidth(), mBasicImage.getHeight(), mNewWidth, mNewHeight,argbimage, newargbimage);
-			int[] img = new int[mNewWidth*mNewHeight];
-			convertByteArrayToIntArray(img, newargbimage);
-			mCurrentImage=Bitmap.createBitmap(img,mNewWidth, mNewHeight,Bitmap.Config.ARGB_8888);
-			mImageView.setImageBitmap(mCurrentImage);
+	        if(mInterpolation==1){
+	        	bilinearInterpolation();
+	        }
+	        if(mInterpolation==2){
+	        	bicubicInterpolation();
+	        }
+	       // Looper.loop();
 	    }
 	});
 	builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -280,5 +313,29 @@ public class ImageProcessingActivity extends Activity {
 	    }
 	});
 	builder.show();
+	}
+	public void bilinearInterpolation(){
+		int[] pixels = new int[mBasicImage.getWidth()* mBasicImage.getHeight()];
+		mBasicImage.getPixels(pixels, 0, mBasicImage.getWidth(), 0, 0,mBasicImage.getWidth(), mBasicImage.getHeight());
+		byte[] argbimage = new byte[4 * mBasicImage.getWidth()* mBasicImage.getHeight()];
+		convertIntArrayToByteArray(pixels, argbimage);
+		byte[] newargbimage = new byte[mNewWidth * mNewHeight * 4];
+		ImgProcessor.interpolateBilinear(mBasicImage.getWidth(), mBasicImage.getHeight(), mNewWidth, mNewHeight,argbimage,newargbimage);
+		int[] img = new int[mNewWidth * mNewHeight];
+		convertByteArrayToIntArray(img, newargbimage);
+		mCurrentImage = Bitmap.createBitmap(img, mNewWidth, mNewHeight,Bitmap.Config.ARGB_8888);
+		mImageView.setImageBitmap(mCurrentImage);
+	}
+	public void bicubicInterpolation(){
+		int[] pixels = new int[mBasicImage.getWidth()* mBasicImage.getHeight()];
+		mBasicImage.getPixels(pixels, 0, mBasicImage.getWidth(), 0, 0,mBasicImage.getWidth(), mBasicImage.getHeight());
+		byte[] argbimage = new byte[4 * mBasicImage.getWidth()* mBasicImage.getHeight()];
+		convertIntArrayToByteArray(pixels, argbimage);
+		byte[] newargbimage = new byte[mNewWidth * mNewHeight * 4];
+		ImgProcessor.interpolateBicubic(mBasicImage.getWidth(), mBasicImage.getHeight(), mNewWidth, mNewHeight,argbimage,newargbimage);
+		int[] img = new int[mNewWidth * mNewHeight];
+		convertByteArrayToIntArray(img, newargbimage);
+		mCurrentImage = Bitmap.createBitmap(img, mNewWidth, mNewHeight,Bitmap.Config.ARGB_8888);
+		mImageView.setImageBitmap(mCurrentImage);
 	}
 }

@@ -49,8 +49,8 @@ JNIEXPORT void JNICALL Java_com_example_imageprocessor_ImgProcessor_smoothHistog
 			mean=i*pHist[i];
 			divider=pHist[i];
 			for(j=1;j<(size/2)+1;j++) {
-				if(i+j<arraySize) {mean+=(i+j)*pHist[i+j];divider+=pHist[i+j];}
-				if(i-j>=0) {mean+=(i-j)*pHist[i-j];divider+=pHist[i-j];}
+				if(i+j<arraySize) {mean+=pHist[i+j];divider++;}
+				if(i-j>=0) {mean+=pHist[i-j];divider++;}
 			}
 			if(divider>0) {
 				pSmoothedHist[i]=(jint)(mean/divider);
@@ -119,7 +119,7 @@ JNIEXPORT void JNICALL Java_com_example_imageprocessor_ImgProcessor_interpolateB
 	jbyte funcRValues[16];
 	jbyte funcGValues[16];
 	jbyte funcBValues[16];
-	jint Xp,Yp,Xn,Yn,index;
+	jint Xp,Yp,Xn,Yn,index,prevXp,prevYp;
 	jint i,j;
 	prevSize=(*env)->GetArrayLength(env,prevImage);
 	newSize=(*env)->GetArrayLength(env,newImage);
@@ -127,6 +127,7 @@ JNIEXPORT void JNICALL Java_com_example_imageprocessor_ImgProcessor_interpolateB
 	pNewImage=(*env)->GetByteArrayElements(env,newImage,0);
 	xRatio=((jfloat)(prevWidth-1)/newWidth);
 	yRatio=((jfloat)(prevHeight-1)/newHeight);
+	prevXp=prevYp=0;
 	for(Yn=1;Yn<newHeight-2;Yn++) {
 		for(Xn=1;Xn<newWidth-2;Xn++) {
 			Xp=(jint)(Xn*xRatio);
@@ -134,158 +135,160 @@ JNIEXPORT void JNICALL Java_com_example_imageprocessor_ImgProcessor_interpolateB
 			xDelta=(Xn*xRatio)-Xp;
 			yDelta=(Yn*yRatio)-Yp;
 			index=Yp*prevWidth*4+Xp*4; //f(0,0)
+			if((Xp!=prevXp)||(Yp!=prevYp)) {
+				funcAValues[0]=pPrevImage[index-4*prevWidth-4];
+				funcRValues[0]=pPrevImage[index-4*prevWidth-3];
+				funcGValues[0]=pPrevImage[index-4*prevWidth-2];
+				funcBValues[0]=pPrevImage[index-4*prevWidth-1];
 
-			funcAValues[0]=pPrevImage[index-4*prevWidth-4];
-			funcRValues[0]=pPrevImage[index-4*prevWidth-3];
-			funcGValues[0]=pPrevImage[index-4*prevWidth-2];
-			funcBValues[0]=pPrevImage[index-4*prevWidth-1];
+				funcAValues[1]=pPrevImage[index-4];
+				funcRValues[1]=pPrevImage[index-3];
+				funcGValues[1]=pPrevImage[index-2];
+				funcBValues[1]=pPrevImage[index-1];
 
-			funcAValues[1]=pPrevImage[index-4];
-			funcRValues[1]=pPrevImage[index-3];
-			funcGValues[1]=pPrevImage[index-2];
-			funcBValues[1]=pPrevImage[index-1];
+				funcAValues[2]=pPrevImage[index+4*prevWidth-4];
+				funcRValues[2]=pPrevImage[index+4*prevWidth-3];
+				funcGValues[2]=pPrevImage[index+4*prevWidth-2];
+				funcBValues[2]=pPrevImage[index+4*prevWidth-1];
 
-			funcAValues[2]=pPrevImage[index+4*prevWidth-4];
-			funcRValues[2]=pPrevImage[index+4*prevWidth-3];
-			funcGValues[2]=pPrevImage[index+4*prevWidth-2];
-			funcBValues[2]=pPrevImage[index+4*prevWidth-1];
+				funcAValues[3]=pPrevImage[index+8*prevWidth-4];
+				funcRValues[3]=pPrevImage[index+8*prevWidth-3];
+				funcGValues[3]=pPrevImage[index+8*prevWidth-2];
+				funcBValues[3]=pPrevImage[index+8*prevWidth-1];
 
-			funcAValues[3]=pPrevImage[index+8*prevWidth-4];
-			funcRValues[3]=pPrevImage[index+8*prevWidth-3];
-			funcGValues[3]=pPrevImage[index+8*prevWidth-2];
-			funcBValues[3]=pPrevImage[index+8*prevWidth-1];
+				funcAValues[4]=pPrevImage[index-4*prevWidth];
+				funcRValues[4]=pPrevImage[index-4*prevWidth+1];
+				funcGValues[4]=pPrevImage[index-4*prevWidth+2];
+				funcBValues[4]=pPrevImage[index-4*prevWidth+3];
 
-			funcAValues[4]=pPrevImage[index-4*prevWidth];
-			funcRValues[4]=pPrevImage[index-4*prevWidth+1];
-			funcGValues[4]=pPrevImage[index-4*prevWidth+2];
-			funcBValues[4]=pPrevImage[index-4*prevWidth+3];
+				funcAValues[5]=pPrevImage[index];
+				funcRValues[5]=pPrevImage[index+1];
+				funcGValues[5]=pPrevImage[index+2];
+				funcBValues[5]=pPrevImage[index+3];
 
-			funcAValues[5]=pPrevImage[index];
-			funcRValues[5]=pPrevImage[index+1];
-			funcGValues[5]=pPrevImage[index+2];
-			funcBValues[5]=pPrevImage[index+3];
+				funcAValues[6]=pPrevImage[index+4*prevWidth];
+				funcRValues[6]=pPrevImage[index+4*prevWidth+1];
+				funcGValues[6]=pPrevImage[index+4*prevWidth+2];
+				funcBValues[6]=pPrevImage[index+4*prevWidth+3];
 
-			funcAValues[6]=pPrevImage[index+4*prevWidth];
-			funcRValues[6]=pPrevImage[index+4*prevWidth+1];
-			funcGValues[6]=pPrevImage[index+4*prevWidth+2];
-			funcBValues[6]=pPrevImage[index+4*prevWidth+3];
+				funcAValues[7]=pPrevImage[index+8*prevWidth];
+				funcRValues[7]=pPrevImage[index+8*prevWidth+1];
+				funcGValues[7]=pPrevImage[index+8*prevWidth+2];
+				funcBValues[7]=pPrevImage[index+8*prevWidth+3];
 
-			funcAValues[7]=pPrevImage[index+8*prevWidth];
-			funcRValues[7]=pPrevImage[index+8*prevWidth+1];
-			funcGValues[7]=pPrevImage[index+8*prevWidth+2];
-			funcBValues[7]=pPrevImage[index+8*prevWidth+3];
+				funcAValues[8]=pPrevImage[index-4*prevWidth+4];
+				funcRValues[8]=pPrevImage[index-4*prevWidth+5];
+				funcGValues[8]=pPrevImage[index-4*prevWidth+6];
+				funcBValues[8]=pPrevImage[index-4*prevWidth+7];
 
-			funcAValues[8]=pPrevImage[index-4*prevWidth+4];
-			funcRValues[8]=pPrevImage[index-4*prevWidth+5];
-			funcGValues[8]=pPrevImage[index-4*prevWidth+6];
-			funcBValues[8]=pPrevImage[index-4*prevWidth+7];
+				funcAValues[9]=pPrevImage[index+4];
+				funcRValues[9]=pPrevImage[index+5];
+				funcGValues[9]=pPrevImage[index+6];
+				funcBValues[9]=pPrevImage[index+7];
 
-			funcAValues[9]=pPrevImage[index+4];
-			funcRValues[9]=pPrevImage[index+5];
-			funcGValues[9]=pPrevImage[index+6];
-			funcBValues[9]=pPrevImage[index+7];
+				funcAValues[10]=pPrevImage[index+4*prevWidth+4];
+				funcRValues[10]=pPrevImage[index+4*prevWidth+5];
+				funcGValues[10]=pPrevImage[index+4*prevWidth+6];
+				funcBValues[10]=pPrevImage[index+4*prevWidth+7];
 
-			funcAValues[10]=pPrevImage[index+4*prevWidth+4];
-			funcRValues[10]=pPrevImage[index+4*prevWidth+5];
-			funcGValues[10]=pPrevImage[index+4*prevWidth+6];
-			funcBValues[10]=pPrevImage[index+4*prevWidth+7];
+				funcAValues[11]=pPrevImage[index+8*prevWidth+4];
+				funcRValues[11]=pPrevImage[index+8*prevWidth+5];
+				funcGValues[11]=pPrevImage[index+8*prevWidth+6];
+				funcBValues[11]=pPrevImage[index+8*prevWidth+7];
 
-			funcAValues[11]=pPrevImage[index+8*prevWidth+4];
-			funcRValues[11]=pPrevImage[index+8*prevWidth+5];
-			funcGValues[11]=pPrevImage[index+8*prevWidth+6];
-			funcBValues[11]=pPrevImage[index+8*prevWidth+7];
+				funcAValues[12]=pPrevImage[index-4*prevWidth+8];
+				funcRValues[12]=pPrevImage[index-4*prevWidth+9];
+				funcGValues[12]=pPrevImage[index-4*prevWidth+10];
+				funcBValues[12]=pPrevImage[index-4*prevWidth+11];
 
-			funcAValues[12]=pPrevImage[index-4*prevWidth+8];
-			funcRValues[12]=pPrevImage[index-4*prevWidth+9];
-			funcGValues[12]=pPrevImage[index-4*prevWidth+10];
-			funcBValues[12]=pPrevImage[index-4*prevWidth+11];
+				funcAValues[13]=pPrevImage[index+8];
+				funcRValues[13]=pPrevImage[index+9];
+				funcGValues[13]=pPrevImage[index+10];
+				funcBValues[13]=pPrevImage[index+11];
 
-			funcAValues[13]=pPrevImage[index+8];
-			funcRValues[13]=pPrevImage[index+9];
-			funcGValues[13]=pPrevImage[index+10];
-			funcBValues[13]=pPrevImage[index+11];
+				funcAValues[14]=pPrevImage[index+4*prevWidth+8];
+				funcRValues[14]=pPrevImage[index+4*prevWidth+9];
+				funcGValues[14]=pPrevImage[index+4*prevWidth+10];
+				funcBValues[14]=pPrevImage[index+4*prevWidth+11];
 
-			funcAValues[14]=pPrevImage[index+4*prevWidth+8];
-			funcRValues[14]=pPrevImage[index+4*prevWidth+9];
-			funcGValues[14]=pPrevImage[index+4*prevWidth+10];
-			funcBValues[14]=pPrevImage[index+4*prevWidth+11];
+				funcAValues[15]=pPrevImage[index+8*prevWidth+8];
+				funcRValues[15]=pPrevImage[index+8*prevWidth+9];
+				funcGValues[15]=pPrevImage[index+8*prevWidth+10];
+				funcBValues[15]=pPrevImage[index+8*prevWidth+11];
 
-			funcAValues[15]=pPrevImage[index+8*prevWidth+8];
-			funcRValues[15]=pPrevImage[index+8*prevWidth+9];
-			funcGValues[15]=pPrevImage[index+8*prevWidth+10];
-			funcBValues[15]=pPrevImage[index+8*prevWidth+11];
+				alphasa[0]=funcAValues[5]&0xff;
+				alphasa[1]=((jfloat)(-12*(funcAValues[1]&0xff)-18*(funcAValues[5]&0xff)+36*(funcAValues[9]&0xff)-6*(funcAValues[13]&0xff)))/36.0;
+				alphasa[2]=((jfloat)(18*(funcAValues[1]&0xff)-36*(funcAValues[5]&0xff)+18*(funcAValues[9]&0xff)))/36.0;
+				alphasa[3]=((jfloat)(-6*(funcAValues[1]&0xff)+18*(funcAValues[5]&0xff)-18*(funcAValues[9]&0xff)+6*(funcAValues[13]&0xff)))/36.0;
+				alphasa[4]=((jfloat)(-12*(funcAValues[4]&0xff)-18*(funcAValues[5]&0xff)+36*(funcAValues[6]&0xff)-6*(funcAValues[7]&0xff)))/36.0;
+				alphasa[5]=((jfloat)(4*(funcAValues[0]&0xff)+6*(funcAValues[1]&0xff)-12*(funcAValues[2]&0xff)+2*(funcAValues[3]&0xff)+6*(funcAValues[4]&0xff)+9*(funcAValues[5]&0xff)-18*(funcAValues[6]&0xff)+3*(funcAValues[7]&0xff)-12*(funcAValues[8]&0xff)-18*(funcAValues[9]&0xff)+36*(funcAValues[10]&0xff)-6*(funcAValues[11]&0xff)+2*(funcAValues[12]&0xff)+3*(funcAValues[13]&0xff)-6*(funcAValues[14]&0xff)+(funcAValues[15]&0xff)))/36.0;
+				alphasa[6]=((jfloat)(-6*(funcAValues[0]&0xff)-9*(funcAValues[1]&0xff)+18*(funcAValues[2]&0xff)-3*(funcAValues[3]&0xff)+12*(funcAValues[4]&0xff)+18*(funcAValues[5]&0xff)-36*(funcAValues[6]&0xff)+6*(funcAValues[7]&0xff)-6*(funcAValues[8]&0xff)-9*(funcAValues[9]&0xff)+18*(funcAValues[10]&0xff)-3*(funcAValues[11]&0xff)))/36.0;
+				alphasa[7]=((jfloat)(2*(funcAValues[0]&0xff)+3*(funcAValues[1]&0xff)-6*(funcAValues[2]&0xff)+(funcAValues[3]&0xff)-6*(funcAValues[4]&0xff)-9*(funcAValues[5]&0xff)+18*(funcAValues[6]&0xff)-3*(funcAValues[7]&0xff)+6*(funcAValues[8]&0xff)+9*(funcAValues[9]&0xff)-18*(funcAValues[10]&0xff)+3*(funcAValues[11]&0xff)-2*(funcAValues[12]&0xff)-3*(funcAValues[13]&0xff)+6*(funcAValues[14]&0xff)-(funcAValues[15]&0xff)))/36.0;
+				alphasa[8]=((jfloat)(18*(funcAValues[4]&0xff)-36*(funcAValues[5]&0xff)+18*(funcAValues[6]&0xff)))/36.0;
+				alphasa[9]=((jfloat)(-6*(funcAValues[0]&0xff)+12*(funcAValues[1]&0xff)-6*(funcAValues[2]&0xff)-9*(funcAValues[4]&0xff)+18*(funcAValues[5]&0xff)-9*(funcAValues[6]&0xff)+18*(funcAValues[8]&0xff)-36*(funcAValues[9]&0xff)+18*(funcAValues[10]&0xff)-3*(funcAValues[12]&0xff)+6*(funcAValues[13]&0xff)-3*(funcAValues[14]&0xff)))/36.0;
+				alphasa[10]=((jfloat)(9*(funcAValues[0]&0xff)-18*(funcAValues[1]&0xff)+9*(funcAValues[2]&0xff)-18*(funcAValues[4]&0xff)+36*(funcAValues[5]&0xff)-18*(funcAValues[6]&0xff)+9*(funcAValues[8]&0xff)-18*(funcAValues[9]&0xff)+9*(funcAValues[10]&0xff)))/36.0;
+				alphasa[11]=((jfloat)(-3*(funcAValues[0]&0xff)+6*(funcAValues[1]&0xff)-3*(funcAValues[2]&0xff)+9*(funcAValues[4]&0xff)-18*(funcAValues[5]&0xff)+9*(funcAValues[6]&0xff)-9*(funcAValues[8]&0xff)+18*(funcAValues[9]&0xff)-9*(funcAValues[10]&0xff)+3*(funcAValues[12]&0xff)-6*(funcAValues[13]&0xff)+3*(funcAValues[14]&0xff)))/36.0;
+				alphasa[12]=((jfloat)(-6*(funcAValues[4]&0xff)+18*(funcAValues[5]&0xff)-18*(funcAValues[6]&0xff)+6*(funcAValues[7]&0xff)))/36.0;
+				alphasa[13]=((jfloat)(2*(funcAValues[0]&0xff)-6*(funcAValues[1]&0xff)+6*(funcAValues[2]&0xff)-2*(funcAValues[3]&0xff)+3*(funcAValues[4]&0xff)-9*(funcAValues[5]&0xff)+9*(funcAValues[6]&0xff)-3*(funcAValues[7]&0xff)-6*(funcAValues[8]&0xff)+18*(funcAValues[9]&0xff)-18*(funcAValues[10]&0xff)+6*(funcAValues[11]&0xff)+(funcAValues[12]&0xff)-3*(funcAValues[13]&0xff)+3*(funcAValues[14]&0xff)-(funcAValues[15]&0xff)))/36.0;
+				alphasa[14]=((jfloat)(-3*(funcAValues[0]&0xff)+9*(funcAValues[1]&0xff)-9*(funcAValues[2]&0xff)+3*(funcAValues[3]&0xff)+6*(funcAValues[4]&0xff)-18*(funcAValues[5]&0xff)+18*(funcAValues[6]&0xff)-6*(funcAValues[7]&0xff)-3*(funcAValues[8]&0xff)+9*(funcAValues[9]&0xff)-9*(funcAValues[10]&0xff)+3*(funcAValues[11]&0xff)))/36.0;
+				alphasa[15]=((jfloat)((funcAValues[0]&0xff)-3*(funcAValues[1]&0xff)+3*(funcAValues[2]&0xff)-(funcAValues[3]&0xff)-3*(funcAValues[4]&0xff)+9*(funcAValues[5]&0xff)-9*(funcAValues[6]&0xff)+3*(funcAValues[7]&0xff)+3*(funcAValues[8]&0xff)-9*(funcAValues[9]&0xff)+9*(funcAValues[10]&0xff)-3*(funcAValues[11]&0xff)-(funcAValues[12]&0xff)+3*(funcAValues[13]&0xff)-3*(funcAValues[14]&0xff)+(funcAValues[15]&0xff)))/36.0;
 
-			alphasa[0]=funcAValues[5]&0xff;
-			alphasa[1]=(-12*(funcAValues[1]&0xff)-18*(funcAValues[5]&0xff)+36*(funcAValues[9]&0xff)-6*(funcAValues[13]&0xff))/36;
-			alphasa[2]=(18*(funcAValues[1]&0xff)-36*(funcAValues[5]&0xff)+18*(funcAValues[9]&0xff))/36;
-			alphasa[3]=(-6*(funcAValues[1]&0xff)+18*(funcAValues[5]&0xff)-18*(funcAValues[9]&0xff)+6*(funcAValues[13]&0xff))/36;
-			alphasa[4]=(-12*(funcAValues[4]&0xff)-18*(funcAValues[5]&0xff)+36*(funcAValues[6]&0xff)-6*(funcAValues[7]&0xff))/36;
-			alphasa[5]=(4*(funcAValues[0]&0xff)+6*(funcAValues[1]&0xff)-12*(funcAValues[2]&0xff)+2*(funcAValues[3]&0xff)+6*(funcAValues[4]&0xff)+9*(funcAValues[5]&0xff)-18*(funcAValues[6]&0xff)+3*(funcAValues[7]&0xff)-12*(funcAValues[8]&0xff)-18*(funcAValues[9]&0xff)+36*(funcAValues[10]&0xff)-6*(funcAValues[11]&0xff)+2*(funcAValues[12]&0xff)+3*(funcAValues[13]&0xff)-6*(funcAValues[14]&0xff)+(funcAValues[15]&0xff))/36;
-			alphasa[6]=(-6*(funcAValues[0]&0xff)-9*(funcAValues[1]&0xff)+18*(funcAValues[2]&0xff)-3*(funcAValues[3]&0xff)+12*(funcAValues[4]&0xff)+18*(funcAValues[5]&0xff)-36*(funcAValues[6]&0xff)+6*(funcAValues[7]&0xff)-6*(funcAValues[8]&0xff)-9*(funcAValues[9]&0xff)+18*(funcAValues[10]&0xff)-3*(funcAValues[11]&0xff))/36;
-			alphasa[7]=(2*(funcAValues[0]&0xff)+3*(funcAValues[1]&0xff)-6*(funcAValues[2]&0xff)+(funcAValues[3]&0xff)-6*(funcAValues[4]&0xff)-9*(funcAValues[5]&0xff)+18*(funcAValues[6]&0xff)-3*(funcAValues[7]&0xff)+6*(funcAValues[8]&0xff)+9*(funcAValues[9]&0xff)-18*(funcAValues[10]&0xff)+3*(funcAValues[11]&0xff)-2*(funcAValues[12]&0xff)-3*(funcAValues[13]&0xff)+6*(funcAValues[14]&0xff)-(funcAValues[15]&0xff))/36;
-			alphasa[8]=(18*(funcAValues[4]&0xff)-36*(funcAValues[5]&0xff)+18*(funcAValues[6]&0xff))/36;
-			alphasa[9]=(-6*(funcAValues[0]&0xff)+12*(funcAValues[1]&0xff)-6*(funcAValues[2]&0xff)-9*(funcAValues[4]&0xff)+18*(funcAValues[5]&0xff)-9*(funcAValues[6]&0xff)+18*(funcAValues[8]&0xff)-36*(funcAValues[9]&0xff)+18*(funcAValues[10]&0xff)-3*(funcAValues[12]&0xff)+6*(funcAValues[13]&0xff)-3*(funcAValues[14]&0xff))/36;
-			alphasa[10]=(9*(funcAValues[0]&0xff)-18*(funcAValues[1]&0xff)+9*(funcAValues[2]&0xff)-18*(funcAValues[4]&0xff)+36*(funcAValues[5]&0xff)-18*(funcAValues[6]&0xff)+9*(funcAValues[8]&0xff)-18*(funcAValues[9]&0xff)+9*(funcAValues[10]&0xff))/36;
-			alphasa[11]=(-3*(funcAValues[0]&0xff)+6*(funcAValues[1]&0xff)-3*(funcAValues[2]&0xff)+9*(funcAValues[4]&0xff)-18*(funcAValues[5]&0xff)+9*(funcAValues[6]&0xff)-9*(funcAValues[8]&0xff)+18*(funcAValues[19]&0xff)-9*(funcAValues[10]&0xff)+3*(funcAValues[12]&0xff)-6*(funcAValues[13]&0xff)+3*(funcAValues[14]&0xff))/36;
-			alphasa[12]=(-6*(funcAValues[4]&0xff)+18*(funcAValues[5]&0xff)-18*(funcAValues[6]&0xff)+6*(funcAValues[7]&0xff))/36;
-			alphasa[13]=(2*(funcAValues[0]&0xff)-6*(funcAValues[1]&0xff)+6*(funcAValues[2]&0xff)-2*(funcAValues[3]&0xff)+3*(funcAValues[4]&0xff)-9*(funcAValues[5]&0xff)+9*(funcAValues[6]&0xff)-3*(funcAValues[7]&0xff)-6*(funcAValues[8]&0xff)+18*(funcAValues[9]&0xff)-18*(funcAValues[10]&0xff)+6*(funcAValues[11]&0xff)+(funcAValues[12]&0xff)-3*(funcAValues[13]&0xff)+3*(funcAValues[14]&0xff)*(funcAValues[15]&0xff))/36;
-			alphasa[14]=(-3*(funcAValues[0]&0xff)+9*(funcAValues[1]&0xff)-9*(funcAValues[2]&0xff)+3*(funcAValues[3]&0xff)+6*(funcAValues[4]&0xff)-18*(funcAValues[5]&0xff)+18*(funcAValues[6]&0xff)-6*(funcAValues[7]&0xff)-3*(funcAValues[8]&0xff)+9*(funcAValues[9]&0xff)-9*(funcAValues[10]&0xff)+3*(funcAValues[11]&0xff))/36;
-			alphasa[15]=((funcAValues[0]&0xff)-3*(funcAValues[1]&0xff)+3*(funcAValues[2]&0xff)-(funcAValues[3]&0xff)-3*(funcAValues[4]&0xff)+9*(funcAValues[5]&0xff)-9*(funcAValues[6]&0xff)+3*(funcAValues[7]&0xff)+3*(funcAValues[8]&0xff)-9*(funcAValues[9]&0xff)+9*(funcAValues[10]&0xff)-3*(funcAValues[11]&0xff)-(funcAValues[12]&0xff)+3*(funcAValues[13]&0xff)-3*(funcAValues[14]&0xff)+(funcAValues[15]&0xff))/36;
+				alphasr[0]=funcRValues[5]&0xff;
+				alphasr[1]=((jfloat)(-12*(funcRValues[1]&0xff)-18*(funcRValues[5]&0xff)+36*(funcRValues[9]&0xff)-6*(funcRValues[13]&0xff)))/36.0;
+				alphasr[2]=((jfloat)(18*(funcRValues[1]&0xff)-36*(funcRValues[5]&0xff)+18*(funcRValues[9]&0xff)))/36.0;
+				alphasr[3]=((jfloat)(-6*(funcRValues[1]&0xff)+18*(funcRValues[5]&0xff)-18*(funcRValues[9]&0xff)+6*(funcRValues[13]&0xff)))/36.0;
+				alphasr[4]=((jfloat)(-12*(funcRValues[4]&0xff)-18*(funcRValues[5]&0xff)+36*(funcRValues[6]&0xff)-6*(funcRValues[7]&0xff)))/36.0;
+				alphasr[5]=((jfloat)(4*(funcRValues[0]&0xff)+6*(funcRValues[1]&0xff)-12*(funcRValues[2]&0xff)+2*(funcRValues[3]&0xff)+6*(funcRValues[4]&0xff)+9*(funcRValues[5]&0xff)-18*(funcRValues[6]&0xff)+3*(funcRValues[7]&0xff)-12*(funcRValues[8]&0xff)-18*(funcRValues[9]&0xff)+36*(funcRValues[10]&0xff)-6*(funcRValues[11]&0xff)+2*(funcRValues[12]&0xff)+3*(funcRValues[13]&0xff)-6*(funcRValues[14]&0xff)+(funcRValues[15]&0xff)))/36.0;
+				alphasr[6]=((jfloat)(-6*(funcRValues[0]&0xff)-9*(funcRValues[1]&0xff)+18*(funcRValues[2]&0xff)-3*(funcRValues[3]&0xff)+12*(funcRValues[4]&0xff)+18*(funcRValues[5]&0xff)-36*(funcRValues[6]&0xff)+6*(funcRValues[7]&0xff)-6*(funcRValues[8]&0xff)-9*(funcRValues[9]&0xff)+18*(funcRValues[10]&0xff)-3*(funcRValues[11]&0xff)))/36.0;
+				alphasr[7]=((jfloat)(2*(funcRValues[0]&0xff)+3*(funcRValues[1]&0xff)-6*(funcRValues[2]&0xff)+(funcRValues[3]&0xff)-6*(funcRValues[4]&0xff)-9*(funcRValues[5]&0xff)+18*(funcRValues[6]&0xff)-3*(funcRValues[7]&0xff)+6*(funcRValues[8]&0xff)+9*(funcRValues[9]&0xff)-18*(funcRValues[10]&0xff)+3*(funcRValues[11]&0xff)-2*(funcRValues[12]&0xff)-3*(funcRValues[13]&0xff)+6*(funcRValues[14]&0xff)-(funcRValues[15]&0xff)))/36.0;
+				alphasr[8]=((jfloat)(18*(funcRValues[4]&0xff)-36*(funcRValues[5]&0xff)+18*(funcRValues[6]&0xff)))/36.0;
+				alphasr[9]=((jfloat)(-6*(funcRValues[0]&0xff)+12*(funcRValues[1]&0xff)-6*(funcRValues[2]&0xff)-9*(funcRValues[4]&0xff)+18*(funcRValues[5]&0xff)-9*(funcRValues[6]&0xff)+18*(funcRValues[8]&0xff)-36*(funcRValues[9]&0xff)+18*(funcRValues[10]&0xff)-3*(funcRValues[12]&0xff)+6*(funcRValues[13]&0xff)-3*(funcRValues[14]&0xff)))/36.0;
+				alphasr[10]=((jfloat)(9*(funcRValues[0]&0xff)-18*(funcRValues[1]&0xff)+9*(funcRValues[2]&0xff)-18*(funcRValues[4]&0xff)+36*(funcRValues[5]&0xff)-18*(funcRValues[6]&0xff)+9*(funcRValues[8]&0xff)-18*(funcRValues[9]&0xff)+9*(funcRValues[10]&0xff)))/36.0;
+				alphasr[11]=((jfloat)(-3*(funcRValues[0]&0xff)+6*(funcRValues[1]&0xff)-3*(funcRValues[2]&0xff)+9*(funcRValues[4]&0xff)-18*(funcRValues[5]&0xff)+9*(funcRValues[6]&0xff)-9*(funcRValues[8]&0xff)+18*(funcRValues[9]&0xff)-9*(funcRValues[10]&0xff)+3*(funcRValues[12]&0xff)-6*(funcRValues[13]&0xff)+3*(funcRValues[14]&0xff)))/36.0;
+				alphasr[12]=((jfloat)(-6*(funcRValues[4]&0xff)+18*(funcRValues[5]&0xff)-18*(funcRValues[6]&0xff)+6*(funcRValues[7]&0xff)))/36.0;
+				alphasr[13]=((jfloat)(2*(funcRValues[0]&0xff)-6*(funcRValues[1]&0xff)+6*(funcRValues[2]&0xff)-2*(funcRValues[3]&0xff)+3*(funcRValues[4]&0xff)-9*(funcRValues[5]&0xff)+9*(funcRValues[6]&0xff)-3*(funcRValues[7]&0xff)-6*(funcRValues[8]&0xff)+18*(funcRValues[9]&0xff)-18*(funcRValues[10]&0xff)+6*(funcRValues[11]&0xff)+(funcRValues[12]&0xff)-3*(funcRValues[13]&0xff)+3*(funcRValues[14]&0xff)-(funcRValues[15]&0xff)))/36.0;
+				alphasr[14]=((jfloat)(-3*(funcRValues[0]&0xff)+9*(funcRValues[1]&0xff)-9*(funcRValues[2]&0xff)+3*(funcRValues[3]&0xff)+6*(funcRValues[4]&0xff)-18*(funcRValues[5]&0xff)+18*(funcRValues[6]&0xff)-6*(funcRValues[7]&0xff)-3*(funcRValues[8]&0xff)+9*(funcRValues[9]&0xff)-9*(funcRValues[10]&0xff)+3*(funcRValues[11]&0xff)))/36.0;
+				alphasr[15]=((jfloat)((funcRValues[0]&0xff)-3*(funcRValues[1]&0xff)+3*(funcRValues[2]&0xff)-(funcRValues[3]&0xff)-3*(funcRValues[4]&0xff)+9*(funcRValues[5]&0xff)-9*(funcRValues[6]&0xff)+3*(funcRValues[7]&0xff)+3*(funcRValues[8]&0xff)-9*(funcRValues[9]&0xff)+9*(funcRValues[10]&0xff)-3*(funcRValues[11]&0xff)-(funcRValues[12]&0xff)+3*(funcRValues[13]&0xff)-3*(funcRValues[14]&0xff)+(funcRValues[15]&0xff)))/36.0;
 
-			alphasr[0]=funcRValues[5]&0xff;
-			alphasr[1]=(-12*(funcRValues[1]&0xff)-18*(funcRValues[5]&0xff)+36*(funcRValues[9]&0xff)-6*(funcRValues[13]&0xff))/36;
-			alphasr[2]=(18*(funcRValues[1]&0xff)-36*(funcRValues[5]&0xff)+18*(funcRValues[9]&0xff))/36;
-			alphasr[3]=(-6*(funcRValues[1]&0xff)+18*(funcRValues[5]&0xff)-18*(funcRValues[9]&0xff)+6*(funcRValues[13]&0xff))/36;
-			alphasr[4]=(-12*(funcRValues[4]&0xff)-18*(funcRValues[5]&0xff)+36*(funcRValues[6]&0xff)-6*(funcRValues[7]&0xff))/36;
-			alphasr[5]=(4*(funcRValues[0]&0xff)+6*(funcRValues[1]&0xff)-12*(funcRValues[2]&0xff)+2*(funcRValues[3]&0xff)+6*(funcRValues[4]&0xff)+9*(funcRValues[5]&0xff)-18*(funcRValues[6]&0xff)+3*(funcRValues[7]&0xff)-12*(funcRValues[8]&0xff)-18*(funcRValues[9]&0xff)+36*(funcRValues[10]&0xff)-6*(funcRValues[11]&0xff)+2*(funcRValues[12]&0xff)+3*(funcRValues[13]&0xff)-6*(funcRValues[14]&0xff)+(funcRValues[15]&0xff))/36;
-			alphasr[6]=(-6*(funcRValues[0]&0xff)-9*(funcRValues[1]&0xff)+18*(funcRValues[2]&0xff)-3*(funcRValues[3]&0xff)+12*(funcRValues[4]&0xff)+18*(funcRValues[5]&0xff)-36*(funcRValues[6]&0xff)+6*(funcRValues[7]&0xff)-6*(funcRValues[8]&0xff)-9*(funcRValues[9]&0xff)+18*(funcRValues[10]&0xff)-3*(funcRValues[11]&0xff))/36;
-			alphasr[7]=(2*(funcRValues[0]&0xff)+3*(funcRValues[1]&0xff)-6*(funcRValues[2]&0xff)+(funcRValues[3]&0xff)-6*(funcRValues[4]&0xff)-9*(funcRValues[5]&0xff)+18*(funcRValues[6]&0xff)-3*(funcRValues[7]&0xff)+6*(funcRValues[8]&0xff)+9*(funcRValues[9]&0xff)-18*(funcRValues[10]&0xff)+3*(funcRValues[11]&0xff)-2*(funcRValues[12]&0xff)-3*(funcRValues[13]&0xff)+6*(funcRValues[14]&0xff)-(funcRValues[15]&0xff))/36;
-			alphasr[8]=(18*(funcRValues[4]&0xff)-36*(funcRValues[5]&0xff)+18*(funcRValues[6]&0xff))/36;
-			alphasr[9]=(-6*(funcRValues[0]&0xff)+12*(funcRValues[1]&0xff)-6*(funcRValues[2]&0xff)-9*(funcRValues[4]&0xff)+18*(funcRValues[5]&0xff)-9*(funcRValues[6]&0xff)+18*(funcRValues[8]&0xff)-36*(funcRValues[9]&0xff)+18*(funcRValues[10]&0xff)-3*(funcRValues[12]&0xff)+6*(funcRValues[13]&0xff)-3*(funcRValues[14]&0xff))/36;
-			alphasr[10]=(9*(funcRValues[0]&0xff)-18*(funcRValues[1]&0xff)+9*(funcRValues[2]&0xff)-18*(funcRValues[4]&0xff)+36*(funcRValues[5]&0xff)-18*(funcRValues[6]&0xff)+9*(funcRValues[8]&0xff)-18*(funcRValues[9]&0xff)+9*(funcRValues[10]&0xff))/36;
-			alphasr[11]=(-3*(funcRValues[0]&0xff)+6*(funcRValues[1]&0xff)-3*(funcRValues[2]&0xff)+9*(funcRValues[4]&0xff)-18*(funcRValues[5]&0xff)+9*(funcRValues[6]&0xff)-9*(funcRValues[8]&0xff)+18*(funcRValues[19]&0xff)-9*(funcRValues[10]&0xff)+3*(funcRValues[12]&0xff)-6*(funcRValues[13]&0xff)+3*(funcRValues[14]&0xff))/36;
-			alphasr[12]=(-6*(funcRValues[4]&0xff)+18*(funcRValues[5]&0xff)-18*(funcRValues[6]&0xff)+6*(funcRValues[7]&0xff))/36;
-			alphasr[13]=(2*(funcRValues[0]&0xff)-6*(funcRValues[1]&0xff)+6*(funcRValues[2]&0xff)-2*(funcRValues[3]&0xff)+3*(funcRValues[4]&0xff)-9*(funcRValues[5]&0xff)+9*(funcRValues[6]&0xff)-3*(funcRValues[7]&0xff)-6*(funcRValues[8]&0xff)+18*(funcRValues[9]&0xff)-18*(funcRValues[10]&0xff)+6*(funcRValues[11]&0xff)+(funcRValues[12]&0xff)-3*(funcRValues[13]&0xff)+3*(funcRValues[14]&0xff)*(funcRValues[15]&0xff))/36;
-			alphasr[14]=(-3*(funcRValues[0]&0xff)+9*(funcRValues[1]&0xff)-9*(funcRValues[2]&0xff)+3*(funcRValues[3]&0xff)+6*(funcRValues[4]&0xff)-18*(funcRValues[5]&0xff)+18*(funcRValues[6]&0xff)-6*(funcRValues[7]&0xff)-3*(funcRValues[8]&0xff)+9*(funcRValues[9]&0xff)-9*(funcRValues[10]&0xff)+3*(funcRValues[11]&0xff))/36;
-			alphasr[15]=((funcRValues[0]&0xff)-3*(funcRValues[1]&0xff)+3*(funcRValues[2]&0xff)-(funcRValues[3]&0xff)-3*(funcRValues[4]&0xff)+9*(funcRValues[5]&0xff)-9*(funcRValues[6]&0xff)+3*(funcRValues[7]&0xff)+3*(funcRValues[8]&0xff)-9*(funcRValues[9]&0xff)+9*(funcRValues[10]&0xff)-3*(funcRValues[11]&0xff)-(funcRValues[12]&0xff)+3*(funcRValues[13]&0xff)-3*(funcRValues[14]&0xff)+(funcRValues[15]&0xff))/36;
+				alphasg[0]=funcGValues[5]&0xff;
+				alphasg[1]=((jfloat)(-12*(funcGValues[1]&0xff)-18*(funcGValues[5]&0xff)+36*(funcGValues[9]&0xff)-6*(funcGValues[13]&0xff)))/36.0;
+				alphasg[2]=((jfloat)(18*(funcGValues[1]&0xff)-36*(funcGValues[5]&0xff)+18*(funcGValues[9]&0xff)))/36.0;
+				alphasg[3]=((jfloat)(-6*(funcGValues[1]&0xff)+18*(funcGValues[5]&0xff)-18*(funcGValues[9]&0xff)+6*(funcGValues[13]&0xff)))/36.0;
+				alphasg[4]=((jfloat)(-12*(funcGValues[4]&0xff)-18*(funcGValues[5]&0xff)+36*(funcGValues[6]&0xff)-6*(funcGValues[7]&0xff)))/36.0;
+				alphasg[5]=((jfloat)(4*(funcGValues[0]&0xff)+6*(funcGValues[1]&0xff)-12*(funcGValues[2]&0xff)+2*(funcGValues[3]&0xff)+6*(funcGValues[4]&0xff)+9*(funcGValues[5]&0xff)-18*(funcGValues[6]&0xff)+3*(funcGValues[7]&0xff)-12*(funcGValues[8]&0xff)-18*(funcGValues[9]&0xff)+36*(funcGValues[10]&0xff)-6*(funcGValues[11]&0xff)+2*(funcGValues[12]&0xff)+3*(funcGValues[13]&0xff)-6*(funcGValues[14]&0xff)+(funcGValues[15]&0xff)))/36.0;
+				alphasg[6]=((jfloat)(-6*(funcGValues[0]&0xff)-9*(funcGValues[1]&0xff)+18*(funcGValues[2]&0xff)-3*(funcGValues[3]&0xff)+12*(funcGValues[4]&0xff)+18*(funcGValues[5]&0xff)-36*(funcGValues[6]&0xff)+6*(funcGValues[7]&0xff)-6*(funcGValues[8]&0xff)-9*(funcGValues[9]&0xff)+18*(funcGValues[10]&0xff)-3*(funcGValues[11]&0xff)))/36.0;
+				alphasg[7]=((jfloat)(2*(funcGValues[0]&0xff)+3*(funcGValues[1]&0xff)-6*(funcGValues[2]&0xff)+(funcGValues[3]&0xff)-6*(funcGValues[4]&0xff)-9*(funcGValues[5]&0xff)+18*(funcGValues[6]&0xff)-3*(funcGValues[7]&0xff)+6*(funcGValues[8]&0xff)+9*(funcGValues[9]&0xff)-18*(funcGValues[10]&0xff)+3*(funcGValues[11]&0xff)-2*(funcGValues[12]&0xff)-3*(funcGValues[13]&0xff)+6*(funcGValues[14]&0xff)-(funcGValues[15]&0xff)))/36.0;
+				alphasg[8]=((jfloat)(18*(funcGValues[4]&0xff)-36*(funcGValues[5]&0xff)+18*(funcGValues[6]&0xff)))/36.0;
+				alphasg[9]=((jfloat)(-6*(funcGValues[0]&0xff)+12*(funcGValues[1]&0xff)-6*(funcGValues[2]&0xff)-9*(funcGValues[4]&0xff)+18*(funcGValues[5]&0xff)-9*(funcGValues[6]&0xff)+18*(funcGValues[8]&0xff)-36*(funcGValues[9]&0xff)+18*(funcGValues[10]&0xff)-3*(funcGValues[12]&0xff)+6*(funcGValues[13]&0xff)-3*(funcGValues[14]&0xff)))/36.0;
+				alphasg[10]=((jfloat)(9*(funcGValues[0]&0xff)-18*(funcGValues[1]&0xff)+9*(funcGValues[2]&0xff)-18*(funcGValues[4]&0xff)+36*(funcGValues[5]&0xff)-18*(funcGValues[6]&0xff)+9*(funcGValues[8]&0xff)-18*(funcGValues[9]&0xff)+9*(funcGValues[10]&0xff)))/36.0;
+				alphasg[11]=((jfloat)(-3*(funcGValues[0]&0xff)+6*(funcGValues[1]&0xff)-3*(funcGValues[2]&0xff)+9*(funcGValues[4]&0xff)-18*(funcGValues[5]&0xff)+9*(funcGValues[6]&0xff)-9*(funcGValues[8]&0xff)+18*(funcGValues[9]&0xff)-9*(funcGValues[10]&0xff)+3*(funcGValues[12]&0xff)-6*(funcGValues[13]&0xff)+3*(funcGValues[14]&0xff)))/36.0;
+				alphasg[12]=((jfloat)(-6*(funcGValues[4]&0xff)+18*(funcGValues[5]&0xff)-18*(funcGValues[6]&0xff)+6*(funcGValues[7]&0xff)))/36.0;
+				alphasg[13]=((jfloat)(2*(funcGValues[0]&0xff)-6*(funcGValues[1]&0xff)+6*(funcGValues[2]&0xff)-2*(funcGValues[3]&0xff)+3*(funcGValues[4]&0xff)-9*(funcGValues[5]&0xff)+9*(funcGValues[6]&0xff)-3*(funcGValues[7]&0xff)-6*(funcGValues[8]&0xff)+18*(funcGValues[9]&0xff)-18*(funcGValues[10]&0xff)+6*(funcGValues[11]&0xff)+(funcGValues[12]&0xff)-3*(funcGValues[13]&0xff)+3*(funcGValues[14]&0xff)-(funcGValues[15]&0xff)))/36.0;
+				alphasg[14]=((jfloat)(-3*(funcGValues[0]&0xff)+9*(funcGValues[1]&0xff)-9*(funcGValues[2]&0xff)+3*(funcGValues[3]&0xff)+6*(funcGValues[4]&0xff)-18*(funcGValues[5]&0xff)+18*(funcGValues[6]&0xff)-6*(funcGValues[7]&0xff)-3*(funcGValues[8]&0xff)+9*(funcGValues[9]&0xff)-9*(funcGValues[10]&0xff)+3*(funcGValues[11]&0xff)))/36.0;
+				alphasg[15]=((jfloat)((funcGValues[0]&0xff)-3*(funcGValues[1]&0xff)+3*(funcGValues[2]&0xff)-(funcGValues[3]&0xff)-3*(funcGValues[4]&0xff)+9*(funcGValues[5]&0xff)-9*(funcGValues[6]&0xff)+3*(funcGValues[7]&0xff)+3*(funcGValues[8]&0xff)-9*(funcGValues[9]&0xff)+9*(funcGValues[10]&0xff)-3*(funcGValues[11]&0xff)-(funcGValues[12]&0xff)+3*(funcGValues[13]&0xff)-3*(funcGValues[14]&0xff)+(funcGValues[15]&0xff)))/36.0;
 
-			alphasg[0]=funcGValues[5]&0xff;
-			alphasg[1]=(-12*(funcGValues[1]&0xff)-18*(funcGValues[5]&0xff)+36*(funcGValues[9]&0xff)-6*(funcGValues[13]&0xff))/36;
-			alphasg[2]=(18*(funcGValues[1]&0xff)-36*(funcGValues[5]&0xff)+18*(funcGValues[9]&0xff))/36;
-			alphasg[3]=(-6*(funcGValues[1]&0xff)+18*(funcGValues[5]&0xff)-18*(funcGValues[9]&0xff)+6*(funcGValues[13]&0xff))/36;
-			alphasg[4]=(-12*(funcGValues[4]&0xff)-18*(funcGValues[5]&0xff)+36*(funcGValues[6]&0xff)-6*(funcGValues[7]&0xff))/36;
-			alphasg[5]=(4*(funcGValues[0]&0xff)+6*(funcGValues[1]&0xff)-12*(funcGValues[2]&0xff)+2*(funcGValues[3]&0xff)+6*(funcGValues[4]&0xff)+9*(funcGValues[5]&0xff)-18*(funcGValues[6]&0xff)+3*(funcGValues[7]&0xff)-12*(funcGValues[8]&0xff)-18*(funcGValues[9]&0xff)+36*(funcGValues[10]&0xff)-6*(funcGValues[11]&0xff)+2*(funcGValues[12]&0xff)+3*(funcGValues[13]&0xff)-6*(funcGValues[14]&0xff)+(funcGValues[15]&0xff))/36;
-			alphasg[6]=(-6*(funcGValues[0]&0xff)-9*(funcGValues[1]&0xff)+18*(funcGValues[2]&0xff)-3*(funcGValues[3]&0xff)+12*(funcGValues[4]&0xff)+18*(funcGValues[5]&0xff)-36*(funcGValues[6]&0xff)+6*(funcGValues[7]&0xff)-6*(funcGValues[8]&0xff)-9*(funcGValues[9]&0xff)+18*(funcGValues[10]&0xff)-3*(funcGValues[11]&0xff))/36;
-			alphasg[7]=(2*(funcGValues[0]&0xff)+3*(funcGValues[1]&0xff)-6*(funcGValues[2]&0xff)+(funcGValues[3]&0xff)-6*(funcGValues[4]&0xff)-9*(funcGValues[5]&0xff)+18*(funcGValues[6]&0xff)-3*(funcGValues[7]&0xff)+6*(funcGValues[8]&0xff)+9*(funcGValues[9]&0xff)-18*(funcGValues[10]&0xff)+3*(funcGValues[11]&0xff)-2*(funcGValues[12]&0xff)-3*(funcGValues[13]&0xff)+6*(funcGValues[14]&0xff)-(funcGValues[15]&0xff))/36;
-			alphasg[8]=(18*(funcGValues[4]&0xff)-36*(funcGValues[5]&0xff)+18*(funcGValues[6]&0xff))/36;
-			alphasg[9]=(-6*(funcGValues[0]&0xff)+12*(funcGValues[1]&0xff)-6*(funcGValues[2]&0xff)-9*(funcGValues[4]&0xff)+18*(funcGValues[5]&0xff)-9*(funcGValues[6]&0xff)+18*(funcGValues[8]&0xff)-36*(funcGValues[9]&0xff)+18*(funcGValues[10]&0xff)-3*(funcGValues[12]&0xff)+6*(funcGValues[13]&0xff)-3*(funcGValues[14]&0xff))/36;
-			alphasg[10]=(9*(funcGValues[0]&0xff)-18*(funcGValues[1]&0xff)+9*(funcGValues[2]&0xff)-18*(funcGValues[4]&0xff)+36*(funcGValues[5]&0xff)-18*(funcGValues[6]&0xff)+9*(funcGValues[8]&0xff)-18*(funcGValues[9]&0xff)+9*(funcGValues[10]&0xff))/36;
-			alphasg[11]=(-3*(funcGValues[0]&0xff)+6*(funcGValues[1]&0xff)-3*(funcGValues[2]&0xff)+9*(funcGValues[4]&0xff)-18*(funcGValues[5]&0xff)+9*(funcGValues[6]&0xff)-9*(funcGValues[8]&0xff)+18*(funcGValues[19]&0xff)-9*(funcGValues[10]&0xff)+3*(funcGValues[12]&0xff)-6*(funcGValues[13]&0xff)+3*(funcGValues[14]&0xff))/36;
-			alphasg[12]=(-6*(funcGValues[4]&0xff)+18*(funcGValues[5]&0xff)-18*(funcGValues[6]&0xff)+6*(funcGValues[7]&0xff))/36;
-			alphasg[13]=(2*(funcGValues[0]&0xff)-6*(funcGValues[1]&0xff)+6*(funcGValues[2]&0xff)-2*(funcGValues[3]&0xff)+3*(funcGValues[4]&0xff)-9*(funcGValues[5]&0xff)+9*(funcGValues[6]&0xff)-3*(funcGValues[7]&0xff)-6*(funcGValues[8]&0xff)+18*(funcGValues[9]&0xff)-18*(funcGValues[10]&0xff)+6*(funcGValues[11]&0xff)+(funcGValues[12]&0xff)-3*(funcGValues[13]&0xff)+3*(funcGValues[14]&0xff)*(funcGValues[15]&0xff))/36;
-			alphasg[14]=(-3*(funcGValues[0]&0xff)+9*(funcGValues[1]&0xff)-9*(funcGValues[2]&0xff)+3*(funcGValues[3]&0xff)+6*(funcGValues[4]&0xff)-18*(funcGValues[5]&0xff)+18*(funcGValues[6]&0xff)-6*(funcGValues[7]&0xff)-3*(funcGValues[8]&0xff)+9*(funcGValues[9]&0xff)-9*(funcGValues[10]&0xff)+3*(funcGValues[11]&0xff))/36;
-			alphasg[15]=((funcGValues[0]&0xff)-3*(funcGValues[1]&0xff)+3*(funcGValues[2]&0xff)-(funcGValues[3]&0xff)-3*(funcGValues[4]&0xff)+9*(funcGValues[5]&0xff)-9*(funcGValues[6]&0xff)+3*(funcGValues[7]&0xff)+3*(funcGValues[8]&0xff)-9*(funcGValues[9]&0xff)+9*(funcGValues[10]&0xff)-3*(funcGValues[11]&0xff)-(funcGValues[12]&0xff)+3*(funcGValues[13]&0xff)-3*(funcGValues[14]&0xff)+(funcGValues[15]&0xff))/36;
-
-			alphasb[0]=funcBValues[5]&0xff;
-			alphasb[1]=(-12*(funcBValues[1]&0xff)-18*(funcBValues[5]&0xff)+36*(funcBValues[9]&0xff)-6*(funcBValues[13]&0xff))/36;
-			alphasb[2]=(18*(funcBValues[1]&0xff)-36*(funcBValues[5]&0xff)+18*(funcBValues[9]&0xff))/36;
-			alphasb[3]=(-6*(funcBValues[1]&0xff)+18*(funcBValues[5]&0xff)-18*(funcBValues[9]&0xff)+6*(funcBValues[13]&0xff))/36;
-			alphasb[4]=(-12*(funcBValues[4]&0xff)-18*(funcBValues[5]&0xff)+36*(funcBValues[6]&0xff)-6*(funcBValues[7]&0xff))/36;
-			alphasb[5]=(4*(funcBValues[0]&0xff)+6*(funcBValues[1]&0xff)-12*(funcBValues[2]&0xff)+2*(funcBValues[3]&0xff)+6*(funcBValues[4]&0xff)+9*(funcBValues[5]&0xff)-18*(funcBValues[6]&0xff)+3*(funcBValues[7]&0xff)-12*(funcBValues[8]&0xff)-18*(funcBValues[9]&0xff)+36*(funcBValues[10]&0xff)-6*(funcBValues[11]&0xff)+2*(funcBValues[12]&0xff)+3*(funcBValues[13]&0xff)-6*(funcBValues[14]&0xff)+(funcBValues[15]&0xff))/36;
-			alphasb[6]=(-6*(funcBValues[0]&0xff)-9*(funcBValues[1]&0xff)+18*(funcBValues[2]&0xff)-3*(funcBValues[3]&0xff)+12*(funcBValues[4]&0xff)+18*(funcBValues[5]&0xff)-36*(funcBValues[6]&0xff)+6*(funcBValues[7]&0xff)-6*(funcBValues[8]&0xff)-9*(funcBValues[9]&0xff)+18*(funcBValues[10]&0xff)-3*(funcBValues[11]&0xff))/36;
-			alphasb[7]=(2*(funcBValues[0]&0xff)+3*(funcBValues[1]&0xff)-6*(funcBValues[2]&0xff)+(funcBValues[3]&0xff)-6*(funcBValues[4]&0xff)-9*(funcBValues[5]&0xff)+18*(funcBValues[6]&0xff)-3*(funcBValues[7]&0xff)+6*(funcBValues[8]&0xff)+9*(funcBValues[9]&0xff)-18*(funcBValues[10]&0xff)+3*(funcBValues[11]&0xff)-2*(funcBValues[12]&0xff)-3*(funcBValues[13]&0xff)+6*(funcBValues[14]&0xff)-(funcBValues[15]&0xff))/36;
-			alphasb[8]=(18*(funcBValues[4]&0xff)-36*(funcBValues[5]&0xff)+18*(funcBValues[6]&0xff))/36;
-			alphasb[9]=(-6*(funcBValues[0]&0xff)+12*(funcBValues[1]&0xff)-6*(funcBValues[2]&0xff)-9*(funcBValues[4]&0xff)+18*(funcBValues[5]&0xff)-9*(funcBValues[6]&0xff)+18*(funcBValues[8]&0xff)-36*(funcBValues[9]&0xff)+18*(funcBValues[10]&0xff)-3*(funcBValues[12]&0xff)+6*(funcBValues[13]&0xff)-3*(funcBValues[14]&0xff))/36;
-			alphasb[10]=(9*(funcBValues[0]&0xff)-18*(funcBValues[1]&0xff)+9*(funcBValues[2]&0xff)-18*(funcBValues[4]&0xff)+36*(funcBValues[5]&0xff)-18*(funcBValues[6]&0xff)+9*(funcBValues[8]&0xff)-18*(funcBValues[9]&0xff)+9*(funcBValues[10]&0xff))/36;
-			alphasb[11]=(-3*(funcBValues[0]&0xff)+6*(funcBValues[1]&0xff)-3*(funcBValues[2]&0xff)+9*(funcBValues[4]&0xff)-18*(funcBValues[5]&0xff)+9*(funcBValues[6]&0xff)-9*(funcBValues[8]&0xff)+18*(funcBValues[19]&0xff)-9*(funcBValues[10]&0xff)+3*(funcBValues[12]&0xff)-6*(funcBValues[13]&0xff)+3*(funcBValues[14]&0xff))/36;
-			alphasb[12]=(-6*(funcBValues[4]&0xff)+18*(funcBValues[5]&0xff)-18*(funcBValues[6]&0xff)+6*(funcBValues[7]&0xff))/36;
-			alphasb[13]=(2*(funcBValues[0]&0xff)-6*(funcBValues[1]&0xff)+6*(funcBValues[2]&0xff)-2*(funcBValues[3]&0xff)+3*(funcBValues[4]&0xff)-9*(funcBValues[5]&0xff)+9*(funcBValues[6]&0xff)-3*(funcBValues[7]&0xff)-6*(funcBValues[8]&0xff)+18*(funcBValues[9]&0xff)-18*(funcBValues[10]&0xff)+6*(funcBValues[11]&0xff)+(funcBValues[12]&0xff)-3*(funcBValues[13]&0xff)+3*(funcBValues[14]&0xff)*(funcBValues[15]&0xff))/36;
-			alphasb[14]=(-3*(funcBValues[0]&0xff)+9*(funcBValues[1]&0xff)-9*(funcBValues[2]&0xff)+3*(funcBValues[3]&0xff)+6*(funcBValues[4]&0xff)-18*(funcBValues[5]&0xff)+18*(funcBValues[6]&0xff)-6*(funcBValues[7]&0xff)-3*(funcBValues[8]&0xff)+9*(funcBValues[9]&0xff)-9*(funcBValues[10]&0xff)+3*(funcBValues[11]&0xff))/36;
-			alphasb[15]=((funcBValues[0]&0xff)-3*(funcBValues[1]&0xff)+3*(funcBValues[2]&0xff)-(funcBValues[3]&0xff)-3*(funcBValues[4]&0xff)+9*(funcBValues[5]&0xff)-9*(funcBValues[6]&0xff)+3*(funcBValues[7]&0xff)+3*(funcBValues[8]&0xff)-9*(funcBValues[9]&0xff)+9*(funcBValues[10]&0xff)-3*(funcBValues[11]&0xff)-(funcBValues[12]&0xff)+3*(funcBValues[13]&0xff)-3*(funcBValues[14]&0xff)+(funcBValues[15]&0xff))/36;
-
+				alphasb[0]=funcBValues[5]&0xff;
+				alphasb[1]=((jfloat)(-12*(funcBValues[1]&0xff)-18*(funcBValues[5]&0xff)+36*(funcBValues[9]&0xff)-6*(funcBValues[13]&0xff)))/36.0;
+				alphasb[2]=((jfloat)(18*(funcBValues[1]&0xff)-36*(funcBValues[5]&0xff)+18*(funcBValues[9]&0xff)))/36.0;
+				alphasb[3]=((jfloat)(-6*(funcBValues[1]&0xff)+18*(funcBValues[5]&0xff)-18*(funcBValues[9]&0xff)+6*(funcBValues[13]&0xff)))/36.0;
+				alphasb[4]=((jfloat)(-12*(funcBValues[4]&0xff)-18*(funcBValues[5]&0xff)+36*(funcBValues[6]&0xff)-6*(funcBValues[7]&0xff)))/36.0;
+				alphasb[5]=((jfloat)(4*(funcBValues[0]&0xff)+6*(funcBValues[1]&0xff)-12*(funcBValues[2]&0xff)+2*(funcBValues[3]&0xff)+6*(funcBValues[4]&0xff)+9*(funcBValues[5]&0xff)-18*(funcBValues[6]&0xff)+3*(funcBValues[7]&0xff)-12*(funcBValues[8]&0xff)-18*(funcBValues[9]&0xff)+36*(funcBValues[10]&0xff)-6*(funcBValues[11]&0xff)+2*(funcBValues[12]&0xff)+3*(funcBValues[13]&0xff)-6*(funcBValues[14]&0xff)+(funcBValues[15]&0xff)))/36.0;
+				alphasb[6]=((jfloat)(-6*(funcBValues[0]&0xff)-9*(funcBValues[1]&0xff)+18*(funcBValues[2]&0xff)-3*(funcBValues[3]&0xff)+12*(funcBValues[4]&0xff)+18*(funcBValues[5]&0xff)-36*(funcBValues[6]&0xff)+6*(funcBValues[7]&0xff)-6*(funcBValues[8]&0xff)-9*(funcBValues[9]&0xff)+18*(funcBValues[10]&0xff)-3*(funcBValues[11]&0xff)))/36.0;
+				alphasb[7]=((jfloat)(2*(funcBValues[0]&0xff)+3*(funcBValues[1]&0xff)-6*(funcBValues[2]&0xff)+(funcBValues[3]&0xff)-6*(funcBValues[4]&0xff)-9*(funcBValues[5]&0xff)+18*(funcBValues[6]&0xff)-3*(funcBValues[7]&0xff)+6*(funcBValues[8]&0xff)+9*(funcBValues[9]&0xff)-18*(funcBValues[10]&0xff)+3*(funcBValues[11]&0xff)-2*(funcBValues[12]&0xff)-3*(funcBValues[13]&0xff)+6*(funcBValues[14]&0xff)-(funcBValues[15]&0xff)))/36.0;
+				alphasb[8]=((jfloat)(18*(funcBValues[4]&0xff)-36*(funcBValues[5]&0xff)+18*(funcBValues[6]&0xff)))/36.0;
+				alphasb[9]=((jfloat)(-6*(funcBValues[0]&0xff)+12*(funcBValues[1]&0xff)-6*(funcBValues[2]&0xff)-9*(funcBValues[4]&0xff)+18*(funcBValues[5]&0xff)-9*(funcBValues[6]&0xff)+18*(funcBValues[8]&0xff)-36*(funcBValues[9]&0xff)+18*(funcBValues[10]&0xff)-3*(funcBValues[12]&0xff)+6*(funcBValues[13]&0xff)-3*(funcBValues[14]&0xff)))/36.0;
+				alphasb[10]=((jfloat)(9*(funcBValues[0]&0xff)-18*(funcBValues[1]&0xff)+9*(funcBValues[2]&0xff)-18*(funcBValues[4]&0xff)+36*(funcBValues[5]&0xff)-18*(funcBValues[6]&0xff)+9*(funcBValues[8]&0xff)-18*(funcBValues[9]&0xff)+9*(funcBValues[10]&0xff)))/36.0;
+				alphasb[11]=((jfloat)(-3*(funcBValues[0]&0xff)+6*(funcBValues[1]&0xff)-3*(funcBValues[2]&0xff)+9*(funcBValues[4]&0xff)-18*(funcBValues[5]&0xff)+9*(funcBValues[6]&0xff)-9*(funcBValues[8]&0xff)+18*(funcBValues[9]&0xff)-9*(funcBValues[10]&0xff)+3*(funcBValues[12]&0xff)-6*(funcBValues[13]&0xff)+3*(funcBValues[14]&0xff)))/36.0;
+				alphasb[12]=((jfloat)(-6*(funcBValues[4]&0xff)+18*(funcBValues[5]&0xff)-18*(funcBValues[6]&0xff)+6*(funcBValues[7]&0xff)))/36.0;
+				alphasb[13]=((jfloat)(2*(funcBValues[0]&0xff)-6*(funcBValues[1]&0xff)+6*(funcBValues[2]&0xff)-2*(funcBValues[3]&0xff)+3*(funcBValues[4]&0xff)-9*(funcBValues[5]&0xff)+9*(funcBValues[6]&0xff)-3*(funcBValues[7]&0xff)-6*(funcBValues[8]&0xff)+18*(funcBValues[9]&0xff)-18*(funcBValues[10]&0xff)+6*(funcBValues[11]&0xff)+(funcBValues[12]&0xff)-3*(funcBValues[13]&0xff)+3*(funcBValues[14]&0xff)-(funcBValues[15]&0xff)))/36.0;
+				alphasb[14]=((jfloat)(-3*(funcBValues[0]&0xff)+9*(funcBValues[1]&0xff)-9*(funcBValues[2]&0xff)+3*(funcBValues[3]&0xff)+6*(funcBValues[4]&0xff)-18*(funcBValues[5]&0xff)+18*(funcBValues[6]&0xff)-6*(funcBValues[7]&0xff)-3*(funcBValues[8]&0xff)+9*(funcBValues[9]&0xff)-9*(funcBValues[10]&0xff)+3*(funcBValues[11]&0xff)))/36.0;
+				alphasb[15]=((jfloat)((funcBValues[0]&0xff)-3*(funcBValues[1]&0xff)+3*(funcBValues[2]&0xff)-(funcBValues[3]&0xff)-3*(funcBValues[4]&0xff)+9*(funcBValues[5]&0xff)-9*(funcBValues[6]&0xff)+3*(funcBValues[7]&0xff)+3*(funcBValues[8]&0xff)-9*(funcBValues[9]&0xff)+9*(funcBValues[10]&0xff)-3*(funcBValues[11]&0xff)-(funcBValues[12]&0xff)+3*(funcBValues[13]&0xff)-3*(funcBValues[14]&0xff)+(funcBValues[15]&0xff)))/36.0;
+			}
+			prevXp=Xp;
+			prevYp=Yp;
 			curAlpha=curRed=curGreen=curBlue=0;
-			for(i=0;i<4;i++){
-				for(j=0;j<4;j++){
+			for(i=0;i<4;i++) {
+				for(j=0;j<4;j++) {
 					curAlpha+=alphasa[i*4+j]*pow(xDelta,i)*pow(yDelta,j);
 					curRed+=alphasr[i*4+j]*pow(xDelta,i)*pow(yDelta,j);
 					curGreen+=alphasg[i*4+j]*pow(xDelta,i)*pow(yDelta,j);
@@ -298,10 +301,10 @@ JNIEXPORT void JNICALL Java_com_example_imageprocessor_ImgProcessor_interpolateB
 			curGreen=roundf(curGreen);
 			curBlue=roundf(curBlue);
 
-			pNewImage[Yn*newWidth*4+Xn*4]=(unsigned char)curAlpha;
-			pNewImage[Yn*newWidth*4+Xn*4+1]=(unsigned char)curRed;
-			pNewImage[Yn*newWidth*4+Xn*4+2]=(unsigned char)curGreen;
-			pNewImage[Yn*newWidth*4+Xn*4+3]=(unsigned char)curBlue;
+			pNewImage[Yn*newWidth*4+Xn*4]=(unsigned char)(curAlpha);
+			pNewImage[Yn*newWidth*4+Xn*4+1]=(unsigned char)(curRed);
+			pNewImage[Yn*newWidth*4+Xn*4+2]=(unsigned char)(curGreen);
+			pNewImage[Yn*newWidth*4+Xn*4+3]=(unsigned char)(curBlue);
 		}
 	}
 
@@ -311,3 +314,47 @@ JNIEXPORT void JNICALL Java_com_example_imageprocessor_ImgProcessor_interpolateB
 	(*env)->ReleaseByteArrayElements(env, newImage, pNewImage, 0);
 }
 
+JNIEXPORT void JNICALL Java_com_example_imageprocessor_ImgProcessor_binarizeOtsu
+(JNIEnv *env, jclass obj, jint width, jint height, jbyteArray image, jbyteArray binarized, jintArray hist) {
+	jbyte* pImage,*pBinarized;
+	jint* pHist;
+	jint threshold,i,j,k;
+	jsize histSize,imgSize,binSize;
+	jdouble sum1,sum2,divider1,divider2,mean1,mean2,squaredDifference;
+	imgSize=(*env)->GetArrayLength(env,image);
+	binSize=(*env)->GetArrayLength(env,binarized);
+	histSize=(*env)->GetArrayLength(env,hist);
+	pBinarized=(*env)->GetByteArrayElements(env,binarized,0);
+	pImage=(*env)->GetByteArrayElements(env,image,0);
+	pHist=(*env)->GetIntArrayElements(env,hist,0);
+	threshold=0;
+	(unsigned char*)pImage;
+	(unsigned char*)pBinarized;
+	sum1=sum2=mean1=mean2=squaredDifference=0.0;
+	for(i=1;i<histSize-2;i++) {
+		sum1=sum2=mean1=mean2=0;
+		for(j=1;j<=i;j++) {
+			sum1+=pHist[j]*j;
+			divider1+=pHist[j];
+		}
+		mean1=sum1/divider1;
+		for(j=i+1;j<histSize-1;j++) {
+			sum2+=pHist[j]*j;
+			divider2+=pHist[j];
+		}
+		mean2=sum2/divider2;
+		if(((mean1-mean2)*(mean1-mean2))>squaredDifference){
+			squaredDifference=((mean1-mean2)*(mean1-mean2));
+			threshold=i;
+		}
+	}
+	for(k=0;k<imgSize;k+=4){
+		pBinarized[k]=pImage[k];
+		pBinarized[k+1]=pBinarized[k+2]=pBinarized[k+3]=(pImage[k+1]>threshold? 0:(histSize-1));
+	}
+	(jbyte*)pImage;
+	(jbyte*)pBinarized;
+	(*env)->ReleaseByteArrayElements(env, image,pImage, 0);
+	(*env)->ReleaseByteArrayElements(env,binarized,pBinarized, 0);
+	(*env)->ReleaseIntArrayElements(env,hist,pHist,0);
+}
