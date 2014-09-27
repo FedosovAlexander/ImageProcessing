@@ -300,7 +300,14 @@ JNIEXPORT void JNICALL Java_com_example_imageprocessor_ImgProcessor_interpolateB
 			curRed=roundf(curRed);
 			curGreen=roundf(curGreen);
 			curBlue=roundf(curBlue);
-
+			curAlpha=(curAlpha<255?curAlpha:255);
+			curAlpha=(curAlpha>0?curAlpha:0);
+			curRed=(curRed<255?curRed:255);
+			curRed=(curRed>0?curRed:0);
+			curGreen=(curGreen<255?curGreen:255);
+			curGreen=(curGreen>0?curGreen:0);
+			curBlue=(curBlue<255?curBlue:255);
+			curBlue=(curBlue>0?curBlue:0);
 			pNewImage[Yn*newWidth*4+Xn*4]=(unsigned char)(curAlpha);
 			pNewImage[Yn*newWidth*4+Xn*4+1]=(unsigned char)(curRed);
 			pNewImage[Yn*newWidth*4+Xn*4+2]=(unsigned char)(curGreen);
