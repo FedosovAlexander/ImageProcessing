@@ -26,7 +26,18 @@ obj/local/armeabi/objs/imgprocessor/ImgProcessor.o: jni/ImgProcessor.c \
  /home/alexander/NVPACK/android-ndk-r10/platforms/android-17/arch-arm/usr/include/machine/internal_types.h \
  /home/alexander/NVPACK/android-ndk-r10/platforms/android-17/arch-arm/usr/include/machine/limits.h \
  /home/alexander/NVPACK/android-ndk-r10/platforms/android-17/arch-arm/usr/include/sys/syslimits.h \
- /home/alexander/NVPACK/android-ndk-r10/platforms/android-17/arch-arm/usr/include/asm/page.h
+ /home/alexander/NVPACK/android-ndk-r10/platforms/android-17/arch-arm/usr/include/asm/page.h \
+ /home/alexander/NVPACK/android-ndk-r10/platforms/android-17/arch-arm/usr/include/time.h \
+ /home/alexander/NVPACK/android-ndk-r10/platforms/android-17/arch-arm/usr/include/sys/time.h \
+ /home/alexander/NVPACK/android-ndk-r10/platforms/android-17/arch-arm/usr/include/linux/time.h \
+ /home/alexander/NVPACK/android-ndk-r10/platforms/android-17/arch-arm/usr/include/asm/siginfo.h \
+ /home/alexander/NVPACK/android-ndk-r10/platforms/android-17/arch-arm/usr/include/asm-generic/siginfo.h \
+ /home/alexander/NVPACK/android-ndk-r10/platforms/android-17/arch-arm/usr/include/stdlib.h \
+ /home/alexander/NVPACK/android-ndk-r10/platforms/android-17/arch-arm/usr/include/string.h \
+ /home/alexander/NVPACK/android-ndk-r10/platforms/android-17/arch-arm/usr/include/malloc.h \
+ /home/alexander/NVPACK/android-ndk-r10/platforms/android-17/arch-arm/usr/include/alloca.h \
+ /home/alexander/NVPACK/android-ndk-r10/platforms/android-17/arch-arm/usr/include/strings.h \
+ /home/alexander/NVPACK/android-ndk-r10/platforms/android-17/arch-arm/usr/include/memory.h
 
 /home/alexander/NVPACK/android-ndk-r10/platforms/android-17/arch-arm/usr/include/jni.h:
 
@@ -83,3 +94,25 @@ jni/com_example_imageprocessor_ImgProcessor.h:
 /home/alexander/NVPACK/android-ndk-r10/platforms/android-17/arch-arm/usr/include/sys/syslimits.h:
 
 /home/alexander/NVPACK/android-ndk-r10/platforms/android-17/arch-arm/usr/include/asm/page.h:
+
+/home/alexander/NVPACK/android-ndk-r10/platforms/android-17/arch-arm/usr/include/time.h:
+
+/home/alexander/NVPACK/android-ndk-r10/platforms/android-17/arch-arm/usr/include/sys/time.h:
+
+/home/alexander/NVPACK/android-ndk-r10/platforms/android-17/arch-arm/usr/include/linux/time.h:
+
+/home/alexander/NVPACK/android-ndk-r10/platforms/android-17/arch-arm/usr/include/asm/siginfo.h:
+
+/home/alexander/NVPACK/android-ndk-r10/platforms/android-17/arch-arm/usr/include/asm-generic/siginfo.h:
+
+/home/alexander/NVPACK/android-ndk-r10/platforms/android-17/arch-arm/usr/include/stdlib.h:
+
+/home/alexander/NVPACK/android-ndk-r10/platforms/android-17/arch-arm/usr/include/string.h:
+
+/home/alexander/NVPACK/android-ndk-r10/platforms/android-17/arch-arm/usr/include/malloc.h:
+
+/home/alexander/NVPACK/android-ndk-r10/platforms/android-17/arch-arm/usr/include/alloca.h:
+
+/home/alexander/NVPACK/android-ndk-r10/platforms/android-17/arch-arm/usr/include/strings.h:
+
+/home/alexander/NVPACK/android-ndk-r10/platforms/android-17/arch-arm/usr/include/memory.h:

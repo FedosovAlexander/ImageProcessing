@@ -73,7 +73,7 @@ public class ImageProcessingActivity extends Activity {
       menu.add(0,4,0,"Bilinear interpolation");
       menu.add(0,5,0,"Bicubic spline interpolation");
       menu.add(0,6,0,"Binarize Otsu");
-      menu.add(0,7,0,"k-means klusterisation");
+      menu.add(0,7,0,"k-means сlusterisation");
       
       return super.onCreateOptionsMenu(menu);
     }
@@ -90,7 +90,7 @@ public class ImageProcessingActivity extends Activity {
 			convertIntArrayToByteArray(pixels,argbimage);
 			convertIntArrayToByteArray(pixels,grayimage);
 			ImgProcessor.convertARGBToGrayscale(mBasicImage.getWidth(),mBasicImage.getHeight(), argbimage, grayimage);
-			int[] histogram=getHistogram(grayimage);
+			int[] histogram=getHistogram(grayimage,1);
 			//mCurrentImage=(mScreenWidth>mScreenHeight?(buildHistogram(mScreenWidth,mScreenHeight,histogram)):(buildHistogram(mScreenHeight,mScreenWidth,histogram)));
 			mCurrentImage=buildHistogram(mScreenWidth,mScreenHeight,histogram);
 			mImageView.setImageBitmap(mCurrentImage);
@@ -104,7 +104,7 @@ public class ImageProcessingActivity extends Activity {
 			convertIntArrayToByteArray(pixels,argbimage);
 			convertIntArrayToByteArray(pixels,grayimage);
 			ImgProcessor.convertARGBToGrayscale(mBasicImage.getWidth(),mBasicImage.getHeight(), argbimage, grayimage);
-			int[] histogram=getHistogram(grayimage);
+			int[] histogram=getHistogram(grayimage,1);
 			int[] smoothedHistogram=new int[histogram.length];
 			ImgProcessor.smoothHistogram(histogram,smoothedHistogram, 3);
 			mCurrentImage=buildHistogram(mScreenWidth,mScreenHeight,smoothedHistogram);
@@ -157,7 +157,7 @@ public class ImageProcessingActivity extends Activity {
 			convertIntArrayToByteArray(pixels,argbimage);
 			convertIntArrayToByteArray(pixels,grayimage);
 			ImgProcessor.convertARGBToGrayscale(mBasicImage.getWidth(),mBasicImage.getHeight(), argbimage, grayimage);
-			int[] histogram=getHistogram(grayimage);
+			int[] histogram=getHistogram(grayimage,1);
 			
 			ImgProcessor.binarizeOtsu(mBasicImage.getWidth(), mBasicImage.getHeight(), grayimage, binarized, histogram);
 			int[] img = new int[mBasicImage.getWidth()* mBasicImage.getHeight()];	
@@ -166,6 +166,27 @@ public class ImageProcessingActivity extends Activity {
 			break;
 
 		}
+		case 7:{
+			int[] pixels = new int[mBasicImage.getWidth()* mBasicImage.getHeight()];
+			mBasicImage.getPixels(pixels, 0, mBasicImage.getWidth(), 0, 0,mBasicImage.getWidth(), mBasicImage.getHeight());
+			byte[] argbimage = new byte[4 * mBasicImage.getWidth()* mBasicImage.getHeight()];
+			byte[] clustimage = new byte[4 * mBasicImage.getWidth()* mBasicImage.getHeight()];
+			convertIntArrayToByteArray(pixels,argbimage);
+			convertIntArrayToByteArray(pixels,clustimage);
+			int[] histogram=getHistogram(argbimage,0);
+			ImgProcessor.clusterizeKMeans(argbimage, clustimage, histogram, ImgProcessor.getNumberOfPeaks(histogram), 0);
+			histogram=getHistogram(argbimage,1);
+			ImgProcessor.clusterizeKMeans(argbimage, clustimage, histogram, ImgProcessor.getNumberOfPeaks(histogram), 1);
+			histogram=getHistogram(argbimage,2);
+			ImgProcessor.clusterizeKMeans(argbimage, clustimage, histogram, ImgProcessor.getNumberOfPeaks(histogram), 2);
+			histogram=getHistogram(argbimage,3);
+			ImgProcessor.clusterizeKMeans(argbimage, clustimage, histogram, ImgProcessor.getNumberOfPeaks(histogram), 3);
+			int[] img = new int[mBasicImage.getWidth()* mBasicImage.getHeight()];	
+			convertByteArrayToIntArray(img,clustimage);
+			mImageView.setImageBitmap(Bitmap.createBitmap(img,mBasicImage.getWidth(), mBasicImage.getHeight(),Bitmap.Config.ARGB_8888));
+			
+			
+			break;}
 		}
 		return super.onOptionsItemSelected(item);
 	}
@@ -187,11 +208,11 @@ public class ImageProcessingActivity extends Activity {
 		}
 		return bytearr;			
 	}
-	public int[] getHistogram(byte[] bytearr){
+	public int[] getHistogram(byte[] bytearr,int shift){
 		int[] histogram=new int[256];
 		Arrays.fill(histogram, 0);	
 		int value;
-		for(int i=1;i<bytearr.length;i+=4){
+		for(int i=shift;i<bytearr.length;i+=4){
 			value=(bytearr[i]&0xFF);
 			++histogram[value];
 		}

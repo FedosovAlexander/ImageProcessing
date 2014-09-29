@@ -33,14 +33,6 @@ JNIEXPORT void JNICALL Java_com_example_imageprocessor_ImgProcessor_interpolateB
 
 /*
  * Class:     com_example_imageprocessor_ImgProcessor
- * Method:    interpolateSpline
- * Signature: (IIII[B)[B
- */
-JNIEXPORT jbyteArray JNICALL Java_com_example_imageprocessor_ImgProcessor_interpolateSpline
-  (JNIEnv *, jclass, jint, jint, jint, jint, jbyteArray);
-
-/*
- * Class:     com_example_imageprocessor_ImgProcessor
  * Method:    smoothHistogram
  * Signature: ([I[II)V
  */
@@ -54,6 +46,22 @@ JNIEXPORT void JNICALL Java_com_example_imageprocessor_ImgProcessor_smoothHistog
  */
 JNIEXPORT void JNICALL Java_com_example_imageprocessor_ImgProcessor_binarizeOtsu
   (JNIEnv *, jclass, jint, jint, jbyteArray, jbyteArray, jintArray);
+
+/*
+ * Class:     com_example_imageprocessor_ImgProcessor
+ * Method:    getNumberOfPeaks
+ * Signature: ([I)I
+ */
+JNIEXPORT jint JNICALL Java_com_example_imageprocessor_ImgProcessor_getNumberOfPeaks
+  (JNIEnv *, jclass, jintArray);
+
+/*
+ * Class:     com_example_imageprocessor_ImgProcessor
+ * Method:    clusterizeKMeans
+ * Signature: ([B[B[III)V
+ */
+JNIEXPORT void JNICALL Java_com_example_imageprocessor_ImgProcessor_clusterizeKMeans
+  (JNIEnv *, jclass, jbyteArray, jbyteArray, jintArray, jint, jint);
 
 #ifdef __cplusplus
 }
