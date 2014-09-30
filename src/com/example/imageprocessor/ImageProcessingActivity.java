@@ -173,14 +173,18 @@ public class ImageProcessingActivity extends Activity {
 			byte[] clustimage = new byte[4 * mBasicImage.getWidth()* mBasicImage.getHeight()];
 			convertIntArrayToByteArray(pixels,argbimage);
 			convertIntArrayToByteArray(pixels,clustimage);
-			int[] histogram=getHistogram(argbimage,0);
-			ImgProcessor.clusterizeKMeans(argbimage, clustimage, histogram, ImgProcessor.getNumberOfPeaks(histogram), 0);
-			histogram=getHistogram(argbimage,1);
-			ImgProcessor.clusterizeKMeans(argbimage, clustimage, histogram, ImgProcessor.getNumberOfPeaks(histogram), 1);
+			int[] histogram=getHistogram(argbimage,1);
+			int[] smoothedhistogram=getHistogram(argbimage,1);
+			//ImgProcessor.clusterizeKMeans(argbimage, clustimage, histogram, ImgProcessor.getNumberOfPeaks(histogram), 0);
+			//histogram=getHistogram(argbimage,1);
+			for(int i=0;i<3;i++){ImgProcessor.smoothHistogram(histogram, smoothedhistogram, 3);System.arraycopy( smoothedhistogram, 0, histogram, 0, smoothedhistogram.length );}
+			ImgProcessor.clusterizeKMeans(argbimage, clustimage, histogram, ImgProcessor.getNumberOfPeaks(smoothedhistogram), 1);
 			histogram=getHistogram(argbimage,2);
-			ImgProcessor.clusterizeKMeans(argbimage, clustimage, histogram, ImgProcessor.getNumberOfPeaks(histogram), 2);
+			for(int i=0;i<3;i++){ImgProcessor.smoothHistogram(histogram, smoothedhistogram, 3);System.arraycopy( smoothedhistogram, 0, histogram, 0, smoothedhistogram.length );}
+			ImgProcessor.clusterizeKMeans(argbimage, clustimage, smoothedhistogram,ImgProcessor.getNumberOfPeaks(smoothedhistogram), 2);
 			histogram=getHistogram(argbimage,3);
-			ImgProcessor.clusterizeKMeans(argbimage, clustimage, histogram, ImgProcessor.getNumberOfPeaks(histogram), 3);
+			for(int i=0;i<3;i++){ImgProcessor.smoothHistogram(histogram, smoothedhistogram, 3);System.arraycopy( smoothedhistogram, 0, histogram, 0, smoothedhistogram.length );}
+			ImgProcessor.clusterizeKMeans(argbimage, clustimage, smoothedhistogram,ImgProcessor.getNumberOfPeaks(smoothedhistogram), 3);
 			int[] img = new int[mBasicImage.getWidth()* mBasicImage.getHeight()];	
 			convertByteArrayToIntArray(img,clustimage);
 			mImageView.setImageBitmap(Bitmap.createBitmap(img,mBasicImage.getWidth(), mBasicImage.getHeight(),Bitmap.Config.ARGB_8888));
