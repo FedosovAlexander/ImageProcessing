@@ -10,9 +10,10 @@
 
 void initRandArray(jint numOfClusters,jint sizeOfArr ,jint centroids[]);
 jdouble evaluateError(jint histSize,jint pHist[],jint* nearestCentroid,jdouble xRatio);
+jdouble evaluateErrorLinear(jint imgSize,jbyte* pImg,jint* nearestCentroid);
 jboolean compareClusters(jint newcentroids[],jint oldcentroids[],jint size);
 jdouble calcDistance(jdouble,jdouble,jdouble,jdouble);
-
+jint findLocalMin(jint start,jint pHist[],jint histSize);
 JNIEXPORT void JNICALL Java_com_example_imgprocessinglab_ImgProcessor_convertARGBToGrayscale
 (JNIEnv * env, jobject obj, jint width, jint height, jbyteArray argb,jbyteArray gray) {
 	int i,result;
@@ -397,7 +398,7 @@ JNIEXPORT jint JNICALL Java_com_example_imgprocessinglab_ImgProcessor_getNumberO
 			peaks[numOfPeaks * 4] = i;
 			flag = 0;
 		} else {
-			curRightBorder = i;
+			curRightBorder = findLocalMin(i,pHist,histSize);
 			peaks[numOfPeaks * 4 + 1] = curLeftBorder;
 			peaks[numOfPeaks * 4 + 2] = curRightBorder;
 			weight = 0;
@@ -405,16 +406,12 @@ JNIEXPORT jint JNICALL Java_com_example_imgprocessinglab_ImgProcessor_getNumberO
 					tmpcount++) {
 				weight += pHist[tmpcount];
 			}
-			peaks[numOfPeaks * 4 + 3] =
-					(1 - (pHist[curLeftBorder] + pHist[curRightBorder]) / (2 * curTop))
-							* (1
-									- (weight
-											/ ((curRightBorder - curLeftBorder)
-													* curTop)));
+			peaks[numOfPeaks * 4 + 3] =(1 - (pHist[curLeftBorder] + pHist[curRightBorder]) / (2 * curTop))* (1- weight/ ((curRightBorder - curLeftBorder)* curTop) );
 			curLeftBorder = curRightBorder;
 			curTop = pHist[curLeftBorder];
 			numOfPeaks++;
 			flag = 1;
+			i=curLeftBorder;
 		}
 		i++;
 	}
@@ -445,7 +442,7 @@ JNIEXPORT void JNICALL Java_com_example_imgprocessinglab_ImgProcessor_clusterize
 	jsize imgSize,clustSize,histSize;
 	jint* pHist;
 	jbyte* pImg,* pClust;
-	jint numOfExperiments=1;
+	jint numOfExperiments=10;
 	jint centroidsCounter,imgCounter,experimentCounter,histCounter,intensityValue;
 	jint centroids[numOfClusters];
 	jint oldcentroids[numOfClusters];
@@ -459,6 +456,7 @@ JNIEXPORT void JNICALL Java_com_example_imgprocessinglab_ImgProcessor_clusterize
 	jdouble xRatio;//scale coefficient
 	jdouble delta;//current delta between current delta and mean distance within cluster
 	jint divider,histMax,tmp;
+	unsigned char intensityVal;
 	imgSize=(*env)->GetArrayLength(env,img);
 	clustSize=(*env)->GetArrayLength(env,clusterized);
 	histSize=(*env)->GetArrayLength(env,hist);
@@ -467,23 +465,27 @@ JNIEXPORT void JNICALL Java_com_example_imgprocessinglab_ImgProcessor_clusterize
 	pHist=(*env)->GetIntArrayElements(env,hist,0);
 	nearestCentroid=malloc(imgSize*sizeof(int));
 	bestNearestCentroid=malloc(imgSize*sizeof(int));
+	(unsigned char*)pImg;
+	(unsigned char*)pClust;
 	histMax=pHist[0];
 	for(histCounter=0;histCounter<histSize;histCounter++){if(pHist[histCounter]>histMax){histMax=pHist[histCounter];}}
-	xRatio=((jdouble)histMax)/histMax;
+	xRatio=((jdouble)histMax)/histSize-1;
 	evaluatedError=DBL_MAX;
 	for(experimentCounter=0;experimentCounter<numOfExperiments;experimentCounter++){
 		srand(time(NULL));tmp=0;
 		//initialize centroids randomly
 		initRandArray(numOfClusters,histSize,centroids);
 		do{		//calculate nearest centroid for each intensity value
-			for(histCounter=0;histCounter<histSize;histCounter++){
+			for(imgCounter=shift;imgCounter<imgSize;imgCounter+=4){
 				currentDistance=0.0;
 				prevDistance=DBL_MAX;
 				for(centroidsCounter=0;centroidsCounter<numOfClusters;centroidsCounter++){
-					currentDistance=calcDistance(histCounter*xRatio,centroids[centroidsCounter]*xRatio,pHist[histCounter],pHist[centroids[centroidsCounter]]);
-					if(prevDistance-currentDistance>0.0){
+					//currentDistance=calcDistance(histCounter*xRatio,centroids[centroidsCounter]*xRatio,pHist[histCounter],pHist[centroids[centroidsCounter]]);
+					intensityVal=pImg[imgCounter];
+					currentDistance=fabs(intensityVal-centroids[centroidsCounter]);
+					if(prevDistance-currentDistance>0.001){
 						prevDistance=currentDistance;
-						nearestCentroid[histCounter]=centroids[centroidsCounter];
+						nearestCentroid[imgCounter]=centroids[centroidsCounter];
 					}
 				}
 			}
@@ -492,38 +494,49 @@ JNIEXPORT void JNICALL Java_com_example_imgprocessinglab_ImgProcessor_clusterize
 				oldcentroids[centroidsCounter]=centroids[centroidsCounter];
 				currentMeanDist=0.0;
 				divider=0;
-				for(histCounter=0;histCounter<histSize;histCounter++){
-					if(centroids[centroidsCounter]==nearestCentroid[histCounter]){
-						currentMeanDist+=calcDistance(centroids[centroidsCounter]*xRatio,histCounter*xRatio,pHist[centroids[centroidsCounter]],pHist[histCounter]);
+				for(imgCounter=shift;imgCounter<imgSize;imgCounter+=4){
+					if(centroids[centroidsCounter]==nearestCentroid[imgCounter]){
+						//currentMeanDist+=calcDistance(centroids[centroidsCounter]*xRatio,histCounter*xRatio,pHist[centroids[centroidsCounter]],pHist[histCounter]);
+						intensityVal=pImg[imgCounter];
+						currentMeanDist+=fabs(centroids[centroidsCounter]-intensityVal);
 						divider++;
 					}
 				}
 				currentMeanDist/=divider;
 				delta=DBL_MAX;
 				//calculate the best new position for centroid
-				for(histCounter=0;histCounter<histSize;histCounter++){
-					if(centroids[centroidsCounter]==nearestCentroid[histCounter]){
-						if((fabs((currentMeanDist-calcDistance(centroids[centroidsCounter]*xRatio,histCounter*xRatio,pHist[centroids[centroidsCounter]],pHist[histCounter])))<delta)){
-							delta=fabs(currentMeanDist-calcDistance(centroids[centroidsCounter]*xRatio,histCounter*xRatio,pHist[centroids[centroidsCounter]],pHist[histCounter]));
-							centroids[centroidsCounter]=histCounter;
+				for(imgCounter=shift;imgCounter<imgSize;imgCounter+=4){
+					if(centroids[centroidsCounter]==nearestCentroid[imgCounter]){
+						intensityVal=pImg[imgCounter];
+						if(fabs(currentMeanDist-intensityVal/*calcDistance(centroids[centroidsCounter]*xRatio,histCounter*xRatio,pHist[centroids[centroidsCounter]],pHist[histCounter])*/)-delta>0.001){
+							delta=fabs(currentMeanDist-intensityVal/*calcDistance(centroids[centroidsCounter]*xRatio,histCounter*xRatio,pHist[centroids[centroidsCounter]],pHist[histCounter])*/);
+							centroids[centroidsCounter]=intensityVal;
 						}
 					}
 				}
 			}
 			tmp++;
-		}while(tmp<50/*!compareClusters(centroids,oldcentroids,numOfClusters)*/);
-		if(evaluatedError-evaluateError(histSize,pHist,nearestCentroid,xRatio)>0){
-			evaluatedError=evaluateError(histSize,pHist,nearestCentroid,xRatio);
-			for(histCounter=0;histCounter<histSize;histCounter++){bestNearestCentroid[histCounter]=nearestCentroid[histCounter];}
+		}while(tmp<10/*!compareClusters(centroids,oldcentroids,numOfClusters)*/);
+		if(evaluatedError-evaluateErrorLinear(imgSize,pImg,nearestCentroid)>0.001){
+			evaluatedError=evaluateErrorLinear(imgSize,pImg,nearestCentroid);
+			for(imgCounter=shift;imgCounter<imgSize;imgCounter+=4){bestNearestCentroid[imgCounter]=nearestCentroid[imgCounter];}
 			for(centroidsCounter=0;centroidsCounter<numOfClusters;centroidsCounter++){bestCentroids[centroidsCounter]=centroids[centroidsCounter];}
 		}
 	}
+	for(centroidsCounter=0;centroidsCounter<numOfClusters;centroidsCounter++){
+	__android_log_print(ANDROID_LOG_DEBUG, "NativeFunction", "best centroid is %d",bestCentroids[centroidsCounter]);//Or ANDROID_LOG_INFO, ..	
+	}
+
 	for(imgCounter=shift;imgCounter<imgSize;imgCounter+=4){
-		intensityValue=pImg[imgCounter]%256;
-		pClust[imgCounter]=(jbyte)(bestNearestCentroid[intensityValue]);
+		intensityValue=(jint)pImg[imgCounter];
+		pClust[imgCounter]=pClust[imgCounter+1]=pClust[imgCounter+2]=(unsigned char)(bestNearestCentroid[imgCounter]);
+		//if(pClust[imgCounter]<0){pClust[imgCounter]=0;}
+		//if(pClust[imgCounter]>255){pClust[imgCounter]=255;}
 		}
 	free(nearestCentroid);
 	free(bestNearestCentroid);
+	(jbyte*)pImg;
+	(jbyte*)pClust;
 	(*env)->ReleaseByteArrayElements(env,img,pImg,0);
 	(*env)->ReleaseByteArrayElements(env,clusterized,pClust,0);
 	(*env)->ReleaseIntArrayElements(env,hist,pHist,0);
@@ -566,4 +579,22 @@ jdouble evaluateError(jint histSize,jint pHist[],jint* nearestCentroid,jdouble x
 		error+=calcDistance(i*xRatio,nearestCentroid[i]*xRatio,pHist[i],pHist[nearestCentroid[i]]);
 	}
 	return error/histSize;
+}
+
+jdouble evaluateErrorLinear(jint imgSize,jbyte* pImg,jint* nearestCentroid){
+	jint i;
+	jdouble error=0.0;
+	for(i=0;i<imgSize;i++){
+		error+=fabs(((unsigned char)pImg[i]%256)-nearestCentroid[i]);
+	}
+	return error/imgSize;
+}
+jint findLocalMin(jint start,jint pHist[],jint histSize){
+	jint i;
+	for(i=start;i<histSize;i++){
+		if((i+1<histSize)){
+			if(pHist[i+1]>pHist[i]){return i;}
+		}
+		else{return histSize-1;}
+	}	
 }
