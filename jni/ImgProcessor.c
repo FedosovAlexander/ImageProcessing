@@ -13,7 +13,7 @@ jdouble evaluateError(jint histSize,jint pHist[],jint* nearestCentroid,jdouble x
 jboolean compareClusters(jint newcentroids[],jint oldcentroids[],jint size);
 jdouble calcDistance(jdouble,jdouble,jdouble,jdouble);
 
-JNIEXPORT void JNICALL Java_com_example_imageprocessor_ImgProcessor_convertARGBToGrayscale
+JNIEXPORT void JNICALL Java_com_example_imgprocessinglab_ImgProcessor_convertARGBToGrayscale
 (JNIEnv * env, jobject obj, jint width, jint height, jbyteArray argb,jbyteArray gray) {
 	int i,result;
 	jint argbarraySize,grayarraySize;
@@ -43,7 +43,7 @@ JNIEXPORT void JNICALL Java_com_example_imageprocessor_ImgProcessor_convertARGBT
 	(*env)->ReleaseByteArrayElements(env, gray, grayimage, 0);
 }
 
-JNIEXPORT void JNICALL Java_com_example_imageprocessor_ImgProcessor_smoothHistogram
+JNIEXPORT void JNICALL Java_com_example_imgprocessinglab_ImgProcessor_smoothHistogram
 (JNIEnv * env, jobject obj, jintArray hist,jintArray smoothedhist, jint size) {
 	jint i,j;
 	jlong mean,divider;
@@ -71,7 +71,7 @@ JNIEXPORT void JNICALL Java_com_example_imageprocessor_ImgProcessor_smoothHistog
 	(*env)->ReleaseIntArrayElements(env, smoothedhist, pSmoothedHist, 0);
 }
 
-JNIEXPORT void JNICALL Java_com_example_imageprocessor_ImgProcessor_interpolateBilinear
+JNIEXPORT void JNICALL Java_com_example_imgprocessinglab_ImgProcessor_interpolateBilinear
 (JNIEnv *env, jclass obj, jint prevWidth, jint prevHeight, jint newWidth, jint newHeight, jbyteArray prevImage,jbyteArray newImage) {
 	jbyte* pPrevImage,* pNewImage;
 	jsize prevSize,newSize;
@@ -114,7 +114,7 @@ JNIEXPORT void JNICALL Java_com_example_imageprocessor_ImgProcessor_interpolateB
 	(*env)->ReleaseByteArrayElements(env, newImage, pNewImage, 0);
 }
 
-JNIEXPORT void JNICALL Java_com_example_imageprocessor_ImgProcessor_interpolateBicubic
+JNIEXPORT void JNICALL Java_com_example_imgprocessinglab_ImgProcessor_interpolateBicubic
 (JNIEnv *env, jclass obj, jint prevWidth, jint prevHeight, jint newWidth, jint newHeight, jbyteArray prevImage,jbyteArray newImage) {
 	jbyte* pPrevImage,* pNewImage;
 	jsize prevSize,newSize;
@@ -331,7 +331,7 @@ JNIEXPORT void JNICALL Java_com_example_imageprocessor_ImgProcessor_interpolateB
 	(*env)->ReleaseByteArrayElements(env, newImage, pNewImage, 0);
 }
 
-JNIEXPORT void JNICALL Java_com_example_imageprocessor_ImgProcessor_binarizeOtsu
+JNIEXPORT void JNICALL Java_com_example_imgprocessinglab_ImgProcessor_binarizeOtsu
 (JNIEnv *env, jclass obj, jint width, jint height, jbyteArray image, jbyteArray binarized, jintArray hist) {
 	jbyte* pImage,*pBinarized;
 	jint* pHist;
@@ -376,7 +376,7 @@ JNIEXPORT void JNICALL Java_com_example_imageprocessor_ImgProcessor_binarizeOtsu
 	(*env)->ReleaseIntArrayElements(env,hist,pHist,0);
 }
 
-JNIEXPORT jint JNICALL Java_com_example_imageprocessor_ImgProcessor_getNumberOfPeaks(
+JNIEXPORT jint JNICALL Java_com_example_imgprocessinglab_ImgProcessor_getNumberOfPeaks(
 		JNIEnv *env, jclass obj, jintArray hist) {
 	jint i, result, tmpcount, weight, curLeftBorder, curRightBorder, curTop,
 			numOfPeaks = 0;
@@ -440,7 +440,7 @@ JNIEXPORT jint JNICALL Java_com_example_imageprocessor_ImgProcessor_getNumberOfP
 	return result;
 }
 
-JNIEXPORT void JNICALL Java_com_example_imageprocessor_ImgProcessor_clusterizeKMeans
+JNIEXPORT void JNICALL Java_com_example_imgprocessinglab_ImgProcessor_clusterizeKMeans
 (JNIEnv *env, jclass obj, jbyteArray img, jbyteArray clusterized,jintArray hist,jint numOfClusters, jint shift) {
 	jsize imgSize,clustSize,histSize;
 	jint* pHist;
