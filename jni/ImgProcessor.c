@@ -1,5 +1,5 @@
 #include <jni.h>
-#include <com_example_imageprocessor_ImgProcessor.h>
+#include <com_example_imgprocessinglab_ImgProcessor.h>
 #include <android/log.h>
 #include <stdio.h>
 #include <math.h>
