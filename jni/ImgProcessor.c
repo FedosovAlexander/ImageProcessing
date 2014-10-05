@@ -444,8 +444,8 @@ JNIEXPORT void JNICALL Java_com_example_imgprocessinglab_ImgProcessor_clusterize
 (JNIEnv *env, jclass obj, jbyteArray img, jbyteArray clusterized,jintArray hist,jint numOfClusters, jint shift) {
 	jsize imgSize,clustSize,histSize;
 	jint* pHist;
-	jbyte* pImg,*pClust;
-	jint numOfExperiments=100;
+	jbyte* pImg,* pClust;
+	jint numOfExperiments=1;
 	jint centroidsCounter,imgCounter,experimentCounter,histCounter,intensityValue;
 	jint centroids[numOfClusters];
 	jint oldcentroids[numOfClusters];
@@ -458,7 +458,7 @@ JNIEXPORT void JNICALL Java_com_example_imgprocessinglab_ImgProcessor_clusterize
 	jdouble evaluatedError;//the best value of error
 	jdouble xRatio;//scale coefficient
 	jdouble delta;//current delta between current delta and mean distance within cluster
-	jint divider,histMax;
+	jint divider,histMax,tmp;
 	imgSize=(*env)->GetArrayLength(env,img);
 	clustSize=(*env)->GetArrayLength(env,clusterized);
 	histSize=(*env)->GetArrayLength(env,hist);
@@ -472,11 +472,13 @@ JNIEXPORT void JNICALL Java_com_example_imgprocessinglab_ImgProcessor_clusterize
 	xRatio=((jdouble)histMax)/histMax;
 	evaluatedError=DBL_MAX;
 	for(experimentCounter=0;experimentCounter<numOfExperiments;experimentCounter++){
-		srand(time(NULL));
+		srand(time(NULL));tmp=0;
+		//initialize centroids randomly
 		initRandArray(numOfClusters,histSize,centroids);
 		do{		//calculate nearest centroid for each intensity value
 			for(histCounter=0;histCounter<histSize;histCounter++){
-				currentDistance=prevDistance=0.0;
+				currentDistance=0.0;
+				prevDistance=DBL_MAX;
 				for(centroidsCounter=0;centroidsCounter<numOfClusters;centroidsCounter++){
 					currentDistance=calcDistance(histCounter*xRatio,centroids[centroidsCounter]*xRatio,pHist[histCounter],pHist[centroids[centroidsCounter]]);
 					if(prevDistance-currentDistance>0.0){
@@ -508,7 +510,8 @@ JNIEXPORT void JNICALL Java_com_example_imgprocessinglab_ImgProcessor_clusterize
 					}
 				}
 			}
-		}while(!compareClusters(oldcentroids,centroids,numOfClusters));
+			tmp++;
+		}while(tmp<50/*!compareClusters(centroids,oldcentroids,numOfClusters)*/);
 		if(evaluatedError-evaluateError(histSize,pHist,nearestCentroid,xRatio)>0){
 			evaluatedError=evaluateError(histSize,pHist,nearestCentroid,xRatio);
 			for(histCounter=0;histCounter<histSize;histCounter++){bestNearestCentroid[histCounter]=nearestCentroid[histCounter];}
@@ -516,8 +519,8 @@ JNIEXPORT void JNICALL Java_com_example_imgprocessinglab_ImgProcessor_clusterize
 		}
 	}
 	for(imgCounter=shift;imgCounter<imgSize;imgCounter+=4){
-		//intensityValue=pImg[imgCounter]&0xff;
-		pClust[imgCounter]=(jbyte)(bestNearestCentroid[(pImg[imgCounter]%256)]%256);
+		intensityValue=pImg[imgCounter]%256;
+		pClust[imgCounter]=(jbyte)(bestNearestCentroid[intensityValue]);
 		}
 	free(nearestCentroid);
 	free(bestNearestCentroid);
