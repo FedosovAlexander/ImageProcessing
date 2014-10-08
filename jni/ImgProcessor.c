@@ -531,8 +531,6 @@ JNIEXPORT void JNICALL Java_com_example_imgprocessinglab_ImgProcessor_clusterize
 	for(imgCounter=shift;imgCounter<imgSize;imgCounter+=4){
 		intensityValue=(jint)pImg[imgCounter];
 		pClust[imgCounter]=(unsigned char)(bestNearestCentroid[imgCounter]);
-		//if(pClust[imgCounter]<0){pClust[imgCounter]=0;}
-		//if(pClust[imgCounter]>255){pClust[imgCounter]=255;}
 		}
 	free(nearestCentroid);
 	free(bestNearestCentroid);
