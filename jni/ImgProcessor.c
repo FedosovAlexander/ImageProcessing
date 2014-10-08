@@ -382,7 +382,7 @@ JNIEXPORT jint JNICALL Java_com_example_imgprocessinglab_ImgProcessor_getNumberO
 	jint i, result, tmpcount, weight, curLeftBorder, curRightBorder, curTop,
 			numOfPeaks = 0;
 	jint flag = 0;
-	jfloat threshold, peaks[4 * 256];
+	jfloat threshold, max,peaks[4 * 256];
 	jsize histSize;
 	jint* pHist;
 	histSize = (*env)->GetArrayLength(env, hist);
@@ -422,12 +422,13 @@ JNIEXPORT jint JNICALL Java_com_example_imgprocessinglab_ImgProcessor_getNumberO
 		(*env)->ReleaseIntArrayElements(env, hist, pHist, 0);
 		return numOfPeaks;
 	}
-	threshold = 0;
+	max=threshold = 0.0;
 	for (i = 0; i < numOfPeaks; i += 4) {
 		threshold += peaks[i + 3];
+		if(peaks[i+3]>max){max=peaks[i+3];}
 	}
 	threshold /= numOfPeaks;
-	threshold *= 0.6;
+	threshold+=(max-threshold)*0.7;
 	for (i = 0; i < numOfPeaks; i += 4) {
 		if (peaks[i + 3] > threshold) {
 			result++;
@@ -516,7 +517,7 @@ JNIEXPORT void JNICALL Java_com_example_imgprocessinglab_ImgProcessor_clusterize
 				}
 			}
 			tmp++;
-		}while(tmp<10/*!compareClusters(centroids,oldcentroids,numOfClusters)*/);
+		}while(!compareClusters(centroids,oldcentroids,numOfClusters));
 		if(evaluatedError-evaluateErrorLinear(imgSize,pImg,nearestCentroid)>0.001){
 			evaluatedError=evaluateErrorLinear(imgSize,pImg,nearestCentroid);
 			for(imgCounter=shift;imgCounter<imgSize;imgCounter+=4){bestNearestCentroid[imgCounter]=nearestCentroid[imgCounter];}
@@ -529,7 +530,7 @@ JNIEXPORT void JNICALL Java_com_example_imgprocessinglab_ImgProcessor_clusterize
 
 	for(imgCounter=shift;imgCounter<imgSize;imgCounter+=4){
 		intensityValue=(jint)pImg[imgCounter];
-		pClust[imgCounter]=pClust[imgCounter+1]=pClust[imgCounter+2]=(unsigned char)(bestNearestCentroid[imgCounter]);
+		pClust[imgCounter]=(unsigned char)(bestNearestCentroid[imgCounter]);
 		//if(pClust[imgCounter]<0){pClust[imgCounter]=0;}
 		//if(pClust[imgCounter]>255){pClust[imgCounter]=255;}
 		}
@@ -572,6 +573,8 @@ void initRandArray(jint numOfClusters,jint sizeOfArr ,jint centroids[]) {
 	}
 }
 
+
+
 jdouble evaluateError(jint histSize,jint pHist[],jint* nearestCentroid,jdouble xRatio){
 	jint i;
 	jdouble error=0.0;
@@ -597,4 +600,66 @@ jint findLocalMin(jint start,jint pHist[],jint histSize){
 		}
 		else{return histSize-1;}
 	}	
+}
+jfloat* getPeaksMeasures(jint pHist[],jint histSize,jint* finalsize){
+	jfloat peaks[4*256];
+	jfloat threshold,max;
+	jfloat *filteredPeaks;
+	jint i,flag,curLeftBorder,curRightBorder,curTop,result,weight,tmpcount,numOfPeaks;
+	curTop = pHist[0];
+	i = 1;
+	curLeftBorder = 0;
+	curRightBorder = 0;
+	result = 0;
+	numOfPeaks=0;
+	while (i < histSize) {
+		if (pHist[i] >= curTop) {
+			curTop = pHist[i];
+			peaks[numOfPeaks * 4] = i;
+			flag = 0;
+		} else {
+			curRightBorder = findLocalMin(i,pHist,histSize);
+			peaks[numOfPeaks * 4 + 1] = curLeftBorder;
+			peaks[numOfPeaks * 4 + 2] = curRightBorder;
+			weight = 0;
+			for (tmpcount = curLeftBorder; tmpcount <= curRightBorder;
+					tmpcount++) {
+				weight += pHist[tmpcount];
+			}
+			peaks[numOfPeaks * 4 + 3] =(1 - (pHist[curLeftBorder] + pHist[curRightBorder]) / (2 * curTop))* (1- weight/ ((curRightBorder - curLeftBorder)* curTop) );
+			curLeftBorder = curRightBorder;
+			curTop = pHist[curLeftBorder];
+			numOfPeaks++;
+			flag = 1;
+			i=curLeftBorder;
+		}
+		i++;
+	}
+	if (flag == 0) {
+		numOfPeaks++;
+	}
+	threshold = 0;
+	max=0.0;
+	for (i = 0; i < numOfPeaks; i ++ ) {
+		threshold += peaks[i*4 + 3];
+		if(peaks[i*4+3]>max){max=peaks[i*4+3];}
+	}
+	threshold /= numOfPeaks;
+	threshold+=(max-threshold)*0.7;
+	//threshold *= 0.6;
+	for (i = 0; i < numOfPeaks; i ++) {
+		if (peaks[4*i + 3] > threshold) {
+			result++;
+		}
+	}
+	tmpcount=0;
+	filteredPeaks=malloc(result*sizeof(jfloat));
+	for (i = 0; i < numOfPeaks; i ++) {
+		if (peaks[4*i + 3] > threshold) {
+			filteredPeaks[tmpcount]=peaks[4*i+3];
+			tmpcount++;
+		}
+	}
+	*finalsize=tmpcount;
+	return filteredPeaks;
 }

@@ -1,9 +1,10 @@
 package com.example.imgprocessinglab;
 
-import java.io.ByteArrayOutputStream;
-import java.nio.ByteBuffer;
+
+
 import java.util.Arrays;
-import java.util.concurrent.Semaphore;
+
+
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -73,7 +74,7 @@ public class ImageProcessingActivity extends Activity {
       menu.add(0,5,0,"Bicubic spline interpolation");
       menu.add(0,6,0,"Binarize Otsu");
       menu.add(0,7,0,"k-means сlusterisation");
-      
+      menu.add(0,8,0,"3d k-means сlusterisation");
       return super.onCreateOptionsMenu(menu);
     }
     
@@ -173,30 +174,64 @@ public class ImageProcessingActivity extends Activity {
 			convertIntArrayToByteArray(pixels,argbimage);
 			convertIntArrayToByteArray(pixels,clustimage);
 			
-			ImgProcessor.convertARGBToGrayscale(mBasicImage.getWidth(),mBasicImage.getHeight(), argbimage, clustimage);
-			ImgProcessor.convertARGBToGrayscale(mBasicImage.getWidth(),mBasicImage.getHeight(), clustimage,argbimage );
+			//ImgProcessor.convertARGBToGrayscale(mBasicImage.getWidth(),mBasicImage.getHeight(), argbimage, clustimage);
+			//ImgProcessor.convertARGBToGrayscale(mBasicImage.getWidth(),mBasicImage.getHeight(), clustimage,argbimage );
 			//ImgProcessor.convertARGBToGrayscale(mBasicImage.getWidth(),mBasicImage.getHeight(),clustimage, argbimage);
-			int[] histogram=getHistogram(clustimage,1);
-			int[] smoothedhistogram=getHistogram(clustimage,1);
-			//ImgProcessor.clusterizeKMeans(argbimage, clustimage, histogram, ImgProcessor.getNumberOfPeaks(histogram), 0);
-			//histogram=getHistogram(argbimage,1);
-			for(int i=0;i<1;i++){ImgProcessor.smoothHistogram(histogram, smoothedhistogram, 3);System.arraycopy( smoothedhistogram, 0, histogram, 0, smoothedhistogram.length );}
-			int clusters=ImgProcessor.getNumberOfPeaks(smoothedhistogram);
-			Log.d("ImageProcessingActivity","the number of clusters is "+clusters);
-			ImgProcessor.clusterizeKMeans(argbimage, clustimage,smoothedhistogram,clusters,1);
-			//histogram=getHistogram(argbimage,2);
-			//smoothedhistogram=getHistogram(argbimage,2);
-			//for(int i=0;i<3;i++){ImgProcessor.smoothHistogram(histogram, smoothedhistogram, 3);System.arraycopy( smoothedhistogram, 0, histogram, 0, smoothedhistogram.length );}
-			//ImgProcessor.clusterizeKMeans(argbimage, clustimage,smoothedhistogram,clusters,2);
-			//histogram=getHistogram(argbimage,3);
-			//smoothedhistogram=getHistogram(argbimage,3);
-			//for(int i=0;i<3;i++){ImgProcessor.smoothHistogram(histogram, smoothedhistogram, 3);System.arraycopy( smoothedhistogram, 0, histogram, 0, smoothedhistogram.length );}
-			//ImgProcessor.clusterizeKMeans(argbimage, clustimage,smoothedhistogram,clusters,3);
+			int[] rhistogram=getHistogram(clustimage,1);
+			int[] rsmoothedhistogram=getHistogram(clustimage,1);
+			int[] ghistogram=getHistogram(clustimage,2);
+			int[] gsmoothedhistogram=getHistogram(clustimage,2);
+			int[] bhistogram=getHistogram(clustimage,3);
+			int[] bsmoothedhistogram=getHistogram(clustimage,3);
+			for(int i=0;i<1;i++){
+			ImgProcessor.smoothHistogram(rhistogram, rsmoothedhistogram, 3);System.arraycopy( rsmoothedhistogram, 0, rhistogram, 0, rsmoothedhistogram.length );
+			ImgProcessor.smoothHistogram(ghistogram, gsmoothedhistogram, 3);System.arraycopy( gsmoothedhistogram, 0, ghistogram, 0, gsmoothedhistogram.length );
+			ImgProcessor.smoothHistogram(bhistogram, bsmoothedhistogram, 3);System.arraycopy( bsmoothedhistogram, 0, bhistogram, 0, bsmoothedhistogram.length );}
+			int clusters1=ImgProcessor.getNumberOfPeaks(rsmoothedhistogram);
+			Log.d("ImageProcessingActivity","the number of red clusters is "+clusters1);
+			int clusters2=ImgProcessor.getNumberOfPeaks(gsmoothedhistogram);
+			Log.d("ImageProcessingActivity","the number of green clusters is "+clusters2);
+			int clusters3=ImgProcessor.getNumberOfPeaks(bsmoothedhistogram);
+			Log.d("ImageProcessingActivity","the number of blue clusters is "+clusters3);
+			ImgProcessor.clusterizeKMeans(argbimage, clustimage,rsmoothedhistogram,clusters1,1);
+			ImgProcessor.clusterizeKMeans(argbimage, clustimage,gsmoothedhistogram,clusters2,2);
+			ImgProcessor.clusterizeKMeans(argbimage, clustimage,bsmoothedhistogram,clusters3,3);
 			int[] img = new int[mBasicImage.getWidth()* mBasicImage.getHeight()];	
 			convertByteArrayToIntArray(img,clustimage);
 			mImageView.setImageBitmap(Bitmap.createBitmap(img,mBasicImage.getWidth(), mBasicImage.getHeight(),Bitmap.Config.ARGB_8888));
 			
 			
+			break;}
+		case 8:{
+			int[] pixels = new int[mBasicImage.getWidth()* mBasicImage.getHeight()];
+			mBasicImage.getPixels(pixels, 0, mBasicImage.getWidth(), 0, 0,mBasicImage.getWidth(), mBasicImage.getHeight());
+			byte[] argbimage = new byte[4 * mBasicImage.getWidth()* mBasicImage.getHeight()];
+			byte[] clustimage = new byte[4 * mBasicImage.getWidth()* mBasicImage.getHeight()];
+			convertIntArrayToByteArray(pixels,argbimage);
+			convertIntArrayToByteArray(pixels,clustimage);
+			
+			//ImgProcessor.convertARGBToGrayscale(mBasicImage.getWidth(),mBasicImage.getHeight(), argbimage, clustimage);
+			//ImgProcessor.convertARGBToGrayscale(mBasicImage.getWidth(),mBasicImage.getHeight(), clustimage,argbimage );
+			//ImgProcessor.convertARGBToGrayscale(mBasicImage.getWidth(),mBasicImage.getHeight(),clustimage, argbimage);
+			int[] rhistogram=getHistogram(clustimage,1);
+			int[] rsmoothedhistogram=getHistogram(clustimage,1);
+			int[] ghistogram=getHistogram(clustimage,2);
+			int[] gsmoothedhistogram=getHistogram(clustimage,2);
+			int[] bhistogram=getHistogram(clustimage,3);
+			int[] bsmoothedhistogram=getHistogram(clustimage,3);
+			for(int i=0;i<1;i++){
+			ImgProcessor.smoothHistogram(rhistogram, rsmoothedhistogram, 3);System.arraycopy( rsmoothedhistogram, 0, rhistogram, 0, rsmoothedhistogram.length );
+			ImgProcessor.smoothHistogram(ghistogram, gsmoothedhistogram, 3);System.arraycopy( gsmoothedhistogram, 0, ghistogram, 0, gsmoothedhistogram.length );
+			ImgProcessor.smoothHistogram(bhistogram, bsmoothedhistogram, 3);System.arraycopy( bsmoothedhistogram, 0, bhistogram, 0, bsmoothedhistogram.length );}
+			int clusters=ImgProcessor.getNumberOfPeaks3d(rsmoothedhistogram,gsmoothedhistogram,bsmoothedhistogram);
+			Log.d("ImageProcessingActivity","the number of clusters is "+clusters);
+			ImgProcessor.clusterizeKMeans(argbimage, clustimage,rsmoothedhistogram,clusters,1);
+			ImgProcessor.clusterizeKMeans(argbimage, clustimage,gsmoothedhistogram,clusters,2);
+			ImgProcessor.clusterizeKMeans(argbimage, clustimage,bsmoothedhistogram,clusters,3);
+			int[] img = new int[mBasicImage.getWidth()* mBasicImage.getHeight()];	
+			convertByteArrayToIntArray(img,clustimage);
+			mImageView.setImageBitmap(Bitmap.createBitmap(img,mBasicImage.getWidth(), mBasicImage.getHeight(),Bitmap.Config.ARGB_8888));
+	
 			break;}
 		}
 		return super.onOptionsItemSelected(item);
