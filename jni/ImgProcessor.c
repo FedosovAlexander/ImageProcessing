@@ -14,6 +14,7 @@ jdouble evaluateErrorLinear(jint imgSize,jbyte* pImg,jint* nearestCentroid);
 jboolean compareClusters(jint newcentroids[],jint oldcentroids[],jint size);
 jdouble calcDistance(jdouble,jdouble,jdouble,jdouble);
 jint findLocalMin(jint start,jint pHist[],jint histSize);
+jfloat* getPeaksMeasures(jint pHist[],jint histSize,jint* finalsize);
 JNIEXPORT void JNICALL Java_com_example_imgprocessinglab_ImgProcessor_convertARGBToGrayscale
 (JNIEnv * env, jobject obj, jint width, jint height, jbyteArray argb,jbyteArray gray) {
 	int i,result;
@@ -437,6 +438,61 @@ JNIEXPORT jint JNICALL Java_com_example_imgprocessinglab_ImgProcessor_getNumberO
 	(*env)->ReleaseIntArrayElements(env, hist, pHist, 0);
 	return result;
 }
+JNIEXPORT jint JNICALL Java_com_example_imgprocessinglab_ImgProcessor_getNumberOfPeaks3d
+  (JNIEnv *env, jclass obj, jintArray rhist, jintArray ghist, jintArray bhist)
+{
+	jfloat threshold,max;
+	jfloat *rpeaks,*gpeaks,*bpeaks,*finalArr;
+	jsize rhistSize,ghistSize,bhistSize;
+	jint* prHist,*pgHist,*pbHist;
+	jint numOfRPeaks,numOfGPeaks,numOfBPeaks;
+	jint rcount,gcount,bcount,totalcount,result;
+	rhistSize = (*env)->GetArrayLength(env, rhist);
+	ghistSize = (*env)->GetArrayLength(env, ghist);
+	bhistSize = (*env)->GetArrayLength(env, bhist);
+	prHist = (*env)->GetIntArrayElements(env, rhist, 0);
+	pgHist = (*env)->GetIntArrayElements(env, ghist, 0);
+	pbHist = (*env)->GetIntArrayElements(env, bhist, 0);
+	rpeaks=getPeaksMeasures(prHist,rhistSize,&numOfRPeaks);
+	gpeaks=getPeaksMeasures(pgHist,ghistSize,&numOfGPeaks);
+	bpeaks=getPeaksMeasures(pbHist,bhistSize,&numOfBPeaks);
+	finalArr=malloc(numOfRPeaks*numOfGPeaks*numOfBPeaks*sizeof(jfloat));
+	totalcount=0;
+	max=threshold=0.0;
+	__android_log_write(ANDROID_LOG_DEBUG, "NativeFunction", "reached cycles in getNumberOfPeaks3d");//Or ANDROID_LOG_INFO, ..
+	__android_log_print(ANDROID_LOG_DEBUG, "NativeFunction", "rcount is %d",numOfRPeaks);//Or ANDROID_LOG_INFO, ..
+	__android_log_print(ANDROID_LOG_DEBUG, "NativeFunction", "gcount is %d",numOfGPeaks);//Or ANDROID_LOG_INFO, ..
+	__android_log_print(ANDROID_LOG_DEBUG, "NativeFunction", "bcount is %d",numOfBPeaks);//Or ANDROID_LOG_INFO, ..
+	for(rcount=0;rcount<numOfRPeaks;rcount++){
+		for(gcount=0;gcount<numOfGPeaks;gcount++){
+			for(bcount=0;bcount<numOfBPeaks;bcount++){
+				finalArr[totalcount]=rpeaks[rcount]*gpeaks[gcount]*bpeaks[bcount];
+				//if(finalArr[totalcount]==0.0){__android_log_write(ANDROID_LOG_DEBUG, "NativeFunction", "everything is very bad");}
+				threshold+=finalArr[totalcount];
+				totalcount++;
+				if(finalArr[totalcount]>max){max=finalArr[totalcount];}
+			}
+		}
+	}
+
+	threshold/=totalcount;
+	threshold+=(max-threshold)*0.87;
+	//threshold*=0.7;
+	result=0;
+	for(rcount=0;rcount<totalcount;rcount++){
+		if(finalArr[rcount]>threshold){
+			result++;
+		}
+	}
+		(*env)->ReleaseIntArrayElements(env, rhist, prHist, 0);
+		(*env)->ReleaseIntArrayElements(env, ghist, pgHist, 0);
+		(*env)->ReleaseIntArrayElements(env, bhist, pbHist, 0);
+if(result>((numOfRPeaks+numOfGPeaks+numOfBPeaks)/3)||(result==0)){result=(numOfRPeaks+numOfGPeaks+numOfBPeaks)/3;}
+__android_log_print(ANDROID_LOG_DEBUG, "NativeFunction", "result is %d",result);//Or ANDROID_LOG_INFO, ..
+	return result;
+}
+
+
 
 JNIEXPORT void JNICALL Java_com_example_imgprocessinglab_ImgProcessor_clusterizeKMeans
 (JNIEnv *env, jclass obj, jbyteArray img, jbyteArray clusterized,jintArray hist,jint numOfClusters, jint shift) {

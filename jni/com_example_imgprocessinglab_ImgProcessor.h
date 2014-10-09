@@ -57,6 +57,14 @@ JNIEXPORT jint JNICALL Java_com_example_imgprocessinglab_ImgProcessor_getNumberO
 
 /*
  * Class:     com_example_imgprocessinglab_ImgProcessor
+ * Method:    getNumberOfPeaks3d
+ * Signature: ([I[I[I)I
+ */
+JNIEXPORT jint JNICALL Java_com_example_imgprocessinglab_ImgProcessor_getNumberOfPeaks3d
+  (JNIEnv *, jclass, jintArray, jintArray, jintArray);
+
+/*
+ * Class:     com_example_imgprocessinglab_ImgProcessor
  * Method:    clusterizeKMeans
  * Signature: ([B[B[III)V
  */
