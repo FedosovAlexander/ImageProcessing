@@ -6,6 +6,7 @@ import java.util.Arrays;
 
 
 
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
@@ -28,10 +29,12 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 public class ImageProcessingActivity extends Activity {
 
 	private ImageView mImageView;
+	private TextView mTextView;
 	private Button mRefreshButton;
 	private Bitmap mBasicImage;
 	private Bitmap mCurrentImage;
@@ -51,8 +54,10 @@ public class ImageProcessingActivity extends Activity {
 		mScreenHeight=p.y;
 		byte[] byteArray = getIntent().getByteArrayExtra("ImageRGBA");
 		mBasicImage = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.length);
+		mCurrentImage = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.length);
 		setContentView(R.layout.activity_image_processing);
 		mImageView=(ImageView)findViewById(R.id.image_view);
+		mTextView=(TextView)findViewById(R.id.output);
 		if(mCurrentImage==null){mCurrentImage=mBasicImage;}
 		mImageView.setImageBitmap(mCurrentImage);
 		mRefreshButton=(Button)findViewById(R.id.refresh_button);
@@ -75,6 +80,12 @@ public class ImageProcessingActivity extends Activity {
       menu.add(0,6,0,"Binarize Otsu");
       menu.add(0,7,0,"k-means сlusterisation");
       menu.add(0,8,0,"3d k-means сlusterisation");
+      menu.add(0,9,0,"calculate characteristics");
+      menu.add(0,10,0,"Haar transform");
+      menu.add(0,11,0,"undo Haar transform");
+      menu.add(0,12,0,"Clusterize entropy");
+      menu.add(0,13,0,"Clusterize energy");
+      menu.add(0,14,0,"Clusterize kurtosis");
       return super.onCreateOptionsMenu(menu);
     }
     
@@ -233,6 +244,121 @@ public class ImageProcessingActivity extends Activity {
 			mImageView.setImageBitmap(Bitmap.createBitmap(img,mBasicImage.getWidth(), mBasicImage.getHeight(),Bitmap.Config.ARGB_8888));
 	
 			break;}
+		case 9:{
+			calculateCharachteristics();
+			break;
+		}
+		case 10: {
+			int[] pixels = new int[mBasicImage.getWidth()* mBasicImage.getHeight()];
+			mCurrentImage.getPixels(pixels, 0, mBasicImage.getWidth(), 0, 0,mBasicImage.getWidth(), mBasicImage.getHeight());
+			byte[] argbimage = new byte[4 * mBasicImage.getWidth()* mBasicImage.getHeight()];
+			byte[] grayimage = new byte[4 * mBasicImage.getWidth()* mBasicImage.getHeight()];
+			byte[] transformed = new byte[4 * mBasicImage.getWidth()* mBasicImage.getHeight()];
+			convertIntArrayToByteArray(pixels,argbimage);
+			convertIntArrayToByteArray(pixels,grayimage);
+			ImgProcessor.convertARGBToGrayscale(mBasicImage.getWidth(),mBasicImage.getHeight(), argbimage, grayimage);
+			System.arraycopy( grayimage, 0, transformed, 0, grayimage.length );
+			ImgProcessor.discreteHaarTransform(grayimage,transformed,mBasicImage.getWidth(),mBasicImage.getHeight());
+			int[] img = new int[mBasicImage.getWidth()* mBasicImage.getHeight()];	
+			convertByteArrayToIntArray(img,transformed);
+			mCurrentImage = Bitmap.createBitmap(img,mBasicImage.getWidth(), mBasicImage.getHeight(),Bitmap.Config.ARGB_8888);
+			mImageView.setImageBitmap(Bitmap.createBitmap(img,mBasicImage.getWidth(), mBasicImage.getHeight(),Bitmap.Config.ARGB_8888));
+			break;
+		}
+		case 11: {
+			int[] pixels = new int[mBasicImage.getWidth()* mBasicImage.getHeight()];
+			mCurrentImage.getPixels(pixels, 0, mBasicImage.getWidth(), 0, 0,mBasicImage.getWidth(), mBasicImage.getHeight());
+			byte[] argbimage = new byte[4 * mBasicImage.getWidth()* mBasicImage.getHeight()];
+			byte[] grayimage = new byte[4 * mBasicImage.getWidth()* mBasicImage.getHeight()];
+			byte[] transformed = new byte[4 * mBasicImage.getWidth()* mBasicImage.getHeight()];
+			convertIntArrayToByteArray(pixels,argbimage);
+			convertIntArrayToByteArray(pixels,grayimage);
+			ImgProcessor.convertARGBToGrayscale(mBasicImage.getWidth(),mBasicImage.getHeight(), argbimage, grayimage);
+			System.arraycopy( grayimage, 0, transformed, 0, grayimage.length );
+			ImgProcessor.undoDiscreteHaarTransform(grayimage,transformed,mBasicImage.getWidth(),mBasicImage.getHeight());
+			int[] img = new int[mBasicImage.getWidth()* mBasicImage.getHeight()];	
+			convertByteArrayToIntArray(img,transformed);
+			mImageView.setImageBitmap(Bitmap.createBitmap(img,mBasicImage.getWidth(), mBasicImage.getHeight(),Bitmap.Config.ARGB_8888));
+			break;
+		}
+		case 12:{
+			int[] pixels = new int[mBasicImage.getWidth()* mBasicImage.getHeight()];
+			mBasicImage.getPixels(pixels, 0, mBasicImage.getWidth(), 0, 0,mBasicImage.getWidth(), mBasicImage.getHeight());
+			byte[] argbimage = new byte[4 * mBasicImage.getWidth()* mBasicImage.getHeight()];
+			byte[] clustimage = new byte[4 * mBasicImage.getWidth()* mBasicImage.getHeight()];
+			convertIntArrayToByteArray(pixels,argbimage);
+			convertIntArrayToByteArray(pixels,clustimage);
+			ImgProcessor.convertARGBToGrayscale(mBasicImage.getWidth(),mBasicImage.getHeight(), argbimage, clustimage);
+			int[] bhistogram=getHistogram(clustimage,3);
+			int[] bsmoothedhistogram=getHistogram(clustimage,3);
+			float[] histogram = new float[256];
+			for(int i=0;i<1;i++){
+			ImgProcessor.smoothHistogram(bhistogram, bsmoothedhistogram, 3);System.arraycopy( bsmoothedhistogram, 0, bhistogram, 0, bsmoothedhistogram.length );}
+			int clusters1=ImgProcessor.getNumberOfPeaks(bsmoothedhistogram);
+			for(int i=0;i<256;i++){
+				histogram[i] = (float)bsmoothedhistogram[i];
+			}
+			ImgProcessor.buildEntropyHistogram(bsmoothedhistogram, histogram, mBasicImage.getWidth(), mBasicImage.getHeight());
+			Log.d("ImageProcessingActivity","the number of clusters is "+clusters1);
+			ImgProcessor.clusterizeKMeansHistogram(argbimage, clustimage,histogram,clusters1);
+			int[] img = new int[mBasicImage.getWidth()* mBasicImage.getHeight()];	
+			convertByteArrayToIntArray(img,clustimage);
+			mImageView.setImageBitmap(Bitmap.createBitmap(img,mBasicImage.getWidth(), mBasicImage.getHeight(),Bitmap.Config.ARGB_8888));
+			
+			
+			break;}
+		case 13:{
+				int[] pixels = new int[mBasicImage.getWidth()* mBasicImage.getHeight()];
+				mBasicImage.getPixels(pixels, 0, mBasicImage.getWidth(), 0, 0,mBasicImage.getWidth(), mBasicImage.getHeight());
+				byte[] argbimage = new byte[4 * mBasicImage.getWidth()* mBasicImage.getHeight()];
+				byte[] clustimage = new byte[4 * mBasicImage.getWidth()* mBasicImage.getHeight()];
+				convertIntArrayToByteArray(pixels,argbimage);
+				convertIntArrayToByteArray(pixels,clustimage);
+				ImgProcessor.convertARGBToGrayscale(mBasicImage.getWidth(),mBasicImage.getHeight(), argbimage, clustimage);
+				int[] bhistogram=getHistogram(clustimage,3);
+				int[] bsmoothedhistogram=getHistogram(clustimage,3);
+				float[] histogram = new float[256];
+				for(int i=0;i<1;i++){
+				ImgProcessor.smoothHistogram(bhistogram, bsmoothedhistogram, 3);System.arraycopy( bsmoothedhistogram, 0, bhistogram, 0, bsmoothedhistogram.length );}
+				int clusters1=ImgProcessor.getNumberOfPeaks(bsmoothedhistogram);
+				for(int i=0;i<256;i++){
+					histogram[i] = (float)bsmoothedhistogram[i];
+				}
+				ImgProcessor.buildEnergyHistogram(bsmoothedhistogram, histogram, mBasicImage.getWidth(), mBasicImage.getHeight());
+				Log.d("ImageProcessingActivity","the number of clusters is "+clusters1);
+				ImgProcessor.clusterizeKMeansHistogram(argbimage, clustimage,histogram,clusters1);
+				int[] img = new int[mBasicImage.getWidth()* mBasicImage.getHeight()];	
+				convertByteArrayToIntArray(img,clustimage);
+				mImageView.setImageBitmap(Bitmap.createBitmap(img,mBasicImage.getWidth(), mBasicImage.getHeight(),Bitmap.Config.ARGB_8888));
+				
+				
+				break;}
+			case 14:{
+					int[] pixels = new int[mBasicImage.getWidth()* mBasicImage.getHeight()];
+					mBasicImage.getPixels(pixels, 0, mBasicImage.getWidth(), 0, 0,mBasicImage.getWidth(), mBasicImage.getHeight());
+					byte[] argbimage = new byte[4 * mBasicImage.getWidth()* mBasicImage.getHeight()];
+					byte[] clustimage = new byte[4 * mBasicImage.getWidth()* mBasicImage.getHeight()];
+					convertIntArrayToByteArray(pixels,argbimage);
+					convertIntArrayToByteArray(pixels,clustimage);
+					ImgProcessor.convertARGBToGrayscale(mBasicImage.getWidth(),mBasicImage.getHeight(), argbimage, clustimage);
+					int[] bhistogram=getHistogram(clustimage,3);
+					int[] bsmoothedhistogram=getHistogram(clustimage,3);
+					float[] histogram = new float[256];
+					for(int i=0;i<1;i++){
+					ImgProcessor.smoothHistogram(bhistogram, bsmoothedhistogram, 3);System.arraycopy( bsmoothedhistogram, 0, bhistogram, 0, bsmoothedhistogram.length );}
+					int clusters1=ImgProcessor.getNumberOfPeaks(bsmoothedhistogram);
+					for(int i=0;i<256;i++){
+						histogram[i] = (float)bsmoothedhistogram[i];
+					}
+					ImgProcessor.buildKurtosisHistogram(bsmoothedhistogram, histogram, mBasicImage.getWidth(), mBasicImage.getHeight());
+					Log.d("ImageProcessingActivity","the number of clusters is "+clusters1);
+					ImgProcessor.clusterizeKMeansHistogram(argbimage, clustimage,histogram,clusters1);
+					int[] img = new int[mBasicImage.getWidth()* mBasicImage.getHeight()];	
+					convertByteArrayToIntArray(img,clustimage);
+					mImageView.setImageBitmap(Bitmap.createBitmap(img,mBasicImage.getWidth(), mBasicImage.getHeight(),Bitmap.Config.ARGB_8888));
+					
+					
+					break;}
 		}
 		return super.onOptionsItemSelected(item);
 	}
@@ -404,5 +530,75 @@ public class ImageProcessingActivity extends Activity {
 		convertByteArrayToIntArray(img, newargbimage);
 		mCurrentImage = Bitmap.createBitmap(img, mNewWidth, mNewHeight,Bitmap.Config.ARGB_8888);
 		mImageView.setImageBitmap(mCurrentImage);
+	}
+	
+	public void calculateCharachteristics() {
+		int[] pixels = new int[mBasicImage.getWidth() * mBasicImage.getHeight()];
+		mBasicImage.getPixels(pixels, 0, mBasicImage.getWidth(), 0, 0,
+				mBasicImage.getWidth(), mBasicImage.getHeight());
+		byte[] argbimage = new byte[4 * mBasicImage.getWidth()
+				* mBasicImage.getHeight()];
+		byte[] grayimage = new byte[4 * mBasicImage.getWidth()
+				* mBasicImage.getHeight()];
+		byte[] binarized = new byte[4 * mBasicImage.getWidth()
+				* mBasicImage.getHeight()];
+		convertIntArrayToByteArray(pixels, argbimage);
+		convertIntArrayToByteArray(pixels, grayimage);
+		ImgProcessor.convertARGBToGrayscale(mBasicImage.getWidth(),
+				mBasicImage.getHeight(), argbimage, grayimage);
+		int[] histogram = getHistogram(grayimage, 1);
+
+		ImgProcessor.binarizeOtsu(mBasicImage.getWidth(),
+				mBasicImage.getHeight(), grayimage, binarized, histogram);
+		int[] img = new int[mBasicImage.getWidth() * mBasicImage.getHeight()];
+		// convertByteArrayToIntArray(img,binarized);
+		// mImageView.setImageBitmap(Bitmap.createBitmap(img,mBasicImage.getWidth(),
+		// mBasicImage.getHeight(),Bitmap.Config.ARGB_8888));
+		int area = 0;
+		int massCenterX,massCenterY;
+		massCenterX=massCenterY=0;
+		int width = 4 * mBasicImage.getWidth();
+		int height = mBasicImage.getHeight();
+		for (int i = 0; i < height; i++) {
+			for (int j = 1; j < width; j += 4) {
+			if (((binarized[i*width+j])&0xff)<200) {
+				area++;
+				massCenterX+=j/4;
+				massCenterY+=i;
+			}
+		}
+	}
+		massCenterX/=area;
+		massCenterY/=area;
+		int threshy, threshx;
+		byte[] binarizedcopy = new byte[4 * mBasicImage.getWidth()
+				* mBasicImage.getHeight()];
+		for (int i = 1; i < height-1; i++) {
+			for (int j = 5; j < width-4; j += 4) {
+				//if () {
+					threshy = 2* (binarized[(i+1)*width+j]&0xff)+ (binarized[(i+1)*width+j- 4]&0xff)+ (binarized[(i+1)*width+j + 4]&0xff)- (2* (binarized[(i-1)*width+j]&0xff)
+									+ (binarized[(i-1)* width+j- 4]&0xff) + (binarized[(i - 1)*width+j + 4]&0xff));
+
+					threshx = 2* (binarized[(i)*width+j+4]&0xff)+ (binarized[(i+1)*width+j+4]&0xff)+ (binarized[(i-1)*width+j + 4]&0xff)- (2* (binarized[(i)*width+j]&0xff)
+							+ (binarized[(i-1)* width+j- 4]&0xff) + (binarized[(i +1)*width+j + 4]&0xff));
+
+					binarizedcopy[i*width+j] = binarizedcopy[i*width+j+ 1] = binarizedcopy[i*width+j + 2] = (byte) ((Math.sqrt(threshx * threshx + threshy * threshy)) > 0.0001 ? 0: 255);
+					binarizedcopy[i*width+j - 1] = binarized[i*width+j - 1];
+
+				//}
+			}
+		}
+		int perimeter = 0;
+		for (int i = 1; i < height - 1; i++) {
+			for (int j = 5; j < width - 4; j += 4) {
+				if ((binarizedcopy[i*width+j] & 0xff) < 200) {
+					perimeter++;
+				}
+			}
+		}
+		double compactness=perimeter*perimeter/area;
+		convertByteArrayToIntArray(img, binarizedcopy);
+		mTextView.setText("Perimeter is "+perimeter+"\n"+"area is "+area+"\n"+"compactness is "+compactness+"\n"+"mass center x is "+massCenterX+"\n"+"mass center y is "+massCenterY);
+		mImageView.setImageBitmap(Bitmap.createBitmap(img,mBasicImage.getWidth(), mBasicImage.getHeight(),Bitmap.Config.ARGB_8888));
 	}
 }

@@ -8,13 +8,19 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-void initRandArray(jint numOfClusters,jint sizeOfArr ,jint centroids[]);
-jdouble evaluateError(jint histSize,jint pHist[],jint* nearestCentroid,jdouble xRatio);
-jdouble evaluateErrorLinear(jint imgSize,jbyte* pImg,jint* nearestCentroid);
-jboolean compareClusters(jint newcentroids[],jint oldcentroids[],jint size);
-jdouble calcDistance(jdouble,jdouble,jdouble,jdouble);
-jint findLocalMin(jint start,jint pHist[],jint histSize);
-jfloat* getPeaksMeasures(jint pHist[],jint histSize,jint* finalsize);
+void initRandArray(jint numOfClusters, jint sizeOfArr, jint centroids[]);
+jdouble evaluateError(jint histSize, jfloat pHist[], jint* nearestCentroid,
+		jdouble yRatio);
+jdouble evaluateErrorLinear(jint imgSize, jbyte* pImg, jint* nearestCentroid);
+jboolean compareClusters(jint newcentroids[], jint oldcentroids[], jint size);
+jdouble calcDistance( jdouble, jdouble, jdouble, jdouble);
+jint findLocalMin(jint start, jint pHist[], jint histSize);
+jfloat* getPeaksMeasures(jint pHist[], jint histSize, jint* finalsize);
+void transposeMatrix(jint width, jint height, jfloat matrix[]);
+void generateHaarMatrix(jint width, jint height, jfloat matrix[]);
+jfloat* multiplySubmatrices(jfloat matA[], jint numOfRowsA, jint numOfColsA,
+		jfloat matB[], jint numOfRowsB, jint numOfColsB);
+jfloat multiplication(jfloat row[], jfloat column[], jint length);
 JNIEXPORT void JNICALL Java_com_example_imgprocessinglab_ImgProcessor_convertARGBToGrayscale
 (JNIEnv * env, jobject obj, jint width, jint height, jbyteArray argb,jbyteArray gray) {
 	int i,result;
@@ -383,7 +389,7 @@ JNIEXPORT jint JNICALL Java_com_example_imgprocessinglab_ImgProcessor_getNumberO
 	jint i, result, tmpcount, weight, curLeftBorder, curRightBorder, curTop,
 			numOfPeaks = 0;
 	jint flag = 0;
-	jfloat threshold, max,peaks[4 * 256];
+	jfloat threshold, max, peaks[4 * 256];
 	jsize histSize;
 	jint* pHist;
 	histSize = (*env)->GetArrayLength(env, hist);
@@ -399,7 +405,7 @@ JNIEXPORT jint JNICALL Java_com_example_imgprocessinglab_ImgProcessor_getNumberO
 			peaks[numOfPeaks * 4] = i;
 			flag = 0;
 		} else {
-			curRightBorder = findLocalMin(i,pHist,histSize);
+			curRightBorder = findLocalMin(i, pHist, histSize);
 			peaks[numOfPeaks * 4 + 1] = curLeftBorder;
 			peaks[numOfPeaks * 4 + 2] = curRightBorder;
 			weight = 0;
@@ -407,12 +413,19 @@ JNIEXPORT jint JNICALL Java_com_example_imgprocessinglab_ImgProcessor_getNumberO
 					tmpcount++) {
 				weight += pHist[tmpcount];
 			}
-			peaks[numOfPeaks * 4 + 3] =(1 - (pHist[curLeftBorder] + pHist[curRightBorder]) / (2 * curTop))* (1- weight/ ((curRightBorder - curLeftBorder)* curTop) );
+			peaks[numOfPeaks * 4 + 3] =
+					(1
+							- (pHist[curLeftBorder] + pHist[curRightBorder])
+									/ (2 * curTop))
+							* (1
+									- weight
+											/ ((curRightBorder - curLeftBorder)
+													* curTop));
 			curLeftBorder = curRightBorder;
 			curTop = pHist[curLeftBorder];
 			numOfPeaks++;
 			flag = 1;
-			i=curLeftBorder;
+			i = curLeftBorder;
 		}
 		i++;
 	}
@@ -423,13 +436,15 @@ JNIEXPORT jint JNICALL Java_com_example_imgprocessinglab_ImgProcessor_getNumberO
 		(*env)->ReleaseIntArrayElements(env, hist, pHist, 0);
 		return numOfPeaks;
 	}
-	max=threshold = 0.0;
+	max = threshold = 0.0;
 	for (i = 0; i < numOfPeaks; i += 4) {
 		threshold += peaks[i + 3];
-		if(peaks[i+3]>max){max=peaks[i+3];}
+		if (peaks[i + 3] > max) {
+			max = peaks[i + 3];
+		}
 	}
 	threshold /= numOfPeaks;
-	threshold+=(max-threshold)*0.7;
+	threshold += (max - threshold) * 0.7;
 	for (i = 0; i < numOfPeaks; i += 4) {
 		if (peaks[i + 3] > threshold) {
 			result++;
@@ -438,61 +453,70 @@ JNIEXPORT jint JNICALL Java_com_example_imgprocessinglab_ImgProcessor_getNumberO
 	(*env)->ReleaseIntArrayElements(env, hist, pHist, 0);
 	return result;
 }
-JNIEXPORT jint JNICALL Java_com_example_imgprocessinglab_ImgProcessor_getNumberOfPeaks3d
-  (JNIEnv *env, jclass obj, jintArray rhist, jintArray ghist, jintArray bhist)
-{
-	jfloat threshold,max;
-	jfloat *rpeaks,*gpeaks,*bpeaks,*finalArr;
-	jsize rhistSize,ghistSize,bhistSize;
-	jint* prHist,*pgHist,*pbHist;
-	jint numOfRPeaks,numOfGPeaks,numOfBPeaks;
-	jint rcount,gcount,bcount,totalcount,result;
+JNIEXPORT jint JNICALL Java_com_example_imgprocessinglab_ImgProcessor_getNumberOfPeaks3d(
+		JNIEnv *env, jclass obj, jintArray rhist, jintArray ghist,
+		jintArray bhist) {
+	jfloat threshold, max;
+	jfloat *rpeaks, *gpeaks, *bpeaks, *finalArr;
+	jsize rhistSize, ghistSize, bhistSize;
+	jint* prHist, *pgHist, *pbHist;
+	jint numOfRPeaks, numOfGPeaks, numOfBPeaks;
+	jint rcount, gcount, bcount, totalcount, result;
 	rhistSize = (*env)->GetArrayLength(env, rhist);
 	ghistSize = (*env)->GetArrayLength(env, ghist);
 	bhistSize = (*env)->GetArrayLength(env, bhist);
 	prHist = (*env)->GetIntArrayElements(env, rhist, 0);
 	pgHist = (*env)->GetIntArrayElements(env, ghist, 0);
 	pbHist = (*env)->GetIntArrayElements(env, bhist, 0);
-	rpeaks=getPeaksMeasures(prHist,rhistSize,&numOfRPeaks);
-	gpeaks=getPeaksMeasures(pgHist,ghistSize,&numOfGPeaks);
-	bpeaks=getPeaksMeasures(pbHist,bhistSize,&numOfBPeaks);
-	finalArr=malloc(numOfRPeaks*numOfGPeaks*numOfBPeaks*sizeof(jfloat));
-	totalcount=0;
-	max=threshold=0.0;
-	__android_log_write(ANDROID_LOG_DEBUG, "NativeFunction", "reached cycles in getNumberOfPeaks3d");//Or ANDROID_LOG_INFO, ..
-	__android_log_print(ANDROID_LOG_DEBUG, "NativeFunction", "rcount is %d",numOfRPeaks);//Or ANDROID_LOG_INFO, ..
-	__android_log_print(ANDROID_LOG_DEBUG, "NativeFunction", "gcount is %d",numOfGPeaks);//Or ANDROID_LOG_INFO, ..
-	__android_log_print(ANDROID_LOG_DEBUG, "NativeFunction", "bcount is %d",numOfBPeaks);//Or ANDROID_LOG_INFO, ..
-	for(rcount=0;rcount<numOfRPeaks;rcount++){
-		for(gcount=0;gcount<numOfGPeaks;gcount++){
-			for(bcount=0;bcount<numOfBPeaks;bcount++){
-				finalArr[totalcount]=rpeaks[rcount]*gpeaks[gcount]*bpeaks[bcount];
+	rpeaks = getPeaksMeasures(prHist, rhistSize, &numOfRPeaks);
+	gpeaks = getPeaksMeasures(pgHist, ghistSize, &numOfGPeaks);
+	bpeaks = getPeaksMeasures(pbHist, bhistSize, &numOfBPeaks);
+	finalArr = malloc(numOfRPeaks * numOfGPeaks * numOfBPeaks * sizeof(jfloat));
+	totalcount = 0;
+	max = threshold = 0.0;
+	__android_log_write(ANDROID_LOG_DEBUG, "NativeFunction",
+			"reached cycles in getNumberOfPeaks3d"); //Or ANDROID_LOG_INFO, ..
+	__android_log_print(ANDROID_LOG_DEBUG, "NativeFunction", "rcount is %d",
+			numOfRPeaks); //Or ANDROID_LOG_INFO, ..
+	__android_log_print(ANDROID_LOG_DEBUG, "NativeFunction", "gcount is %d",
+			numOfGPeaks); //Or ANDROID_LOG_INFO, ..
+	__android_log_print(ANDROID_LOG_DEBUG, "NativeFunction", "bcount is %d",
+			numOfBPeaks); //Or ANDROID_LOG_INFO, ..
+	for (rcount = 0; rcount < numOfRPeaks; rcount++) {
+		for (gcount = 0; gcount < numOfGPeaks; gcount++) {
+			for (bcount = 0; bcount < numOfBPeaks; bcount++) {
+				finalArr[totalcount] = rpeaks[rcount] * gpeaks[gcount]
+						* bpeaks[bcount];
 				//if(finalArr[totalcount]==0.0){__android_log_write(ANDROID_LOG_DEBUG, "NativeFunction", "everything is very bad");}
-				threshold+=finalArr[totalcount];
+				threshold += finalArr[totalcount];
 				totalcount++;
-				if(finalArr[totalcount]>max){max=finalArr[totalcount];}
+				if (finalArr[totalcount] > max) {
+					max = finalArr[totalcount];
+				}
 			}
 		}
 	}
 
-	threshold/=totalcount;
-	threshold+=(max-threshold)*0.87;
+	threshold /= totalcount;
+	threshold += (max - threshold) * 0.87;
 	//threshold*=0.7;
-	result=0;
-	for(rcount=0;rcount<totalcount;rcount++){
-		if(finalArr[rcount]>threshold){
+	result = 0;
+	for (rcount = 0; rcount < totalcount; rcount++) {
+		if (finalArr[rcount] > threshold) {
 			result++;
 		}
 	}
-		(*env)->ReleaseIntArrayElements(env, rhist, prHist, 0);
-		(*env)->ReleaseIntArrayElements(env, ghist, pgHist, 0);
-		(*env)->ReleaseIntArrayElements(env, bhist, pbHist, 0);
-if(result>((numOfRPeaks+numOfGPeaks+numOfBPeaks)/3)||(result==0)){result=(numOfRPeaks+numOfGPeaks+numOfBPeaks)/3;}
-__android_log_print(ANDROID_LOG_DEBUG, "NativeFunction", "result is %d",result);//Or ANDROID_LOG_INFO, ..
+	(*env)->ReleaseIntArrayElements(env, rhist, prHist, 0);
+	(*env)->ReleaseIntArrayElements(env, ghist, pgHist, 0);
+	(*env)->ReleaseIntArrayElements(env, bhist, pbHist, 0);
+	if (result > ((numOfRPeaks + numOfGPeaks + numOfBPeaks) / 3)
+			|| (result == 0)) {
+		result = (numOfRPeaks + numOfGPeaks + numOfBPeaks) / 3;
+	}
+	__android_log_print(ANDROID_LOG_DEBUG, "NativeFunction", "result is %d",
+			result); //Or ANDROID_LOG_INFO, ..
 	return result;
 }
-
-
 
 JNIEXPORT void JNICALL Java_com_example_imgprocessinglab_ImgProcessor_clusterizeKMeans
 (JNIEnv *env, jclass obj, jbyteArray img, jbyteArray clusterized,jintArray hist,jint numOfClusters, jint shift) {
@@ -506,11 +530,11 @@ JNIEXPORT void JNICALL Java_com_example_imgprocessinglab_ImgProcessor_clusterize
 	jint bestCentroids[numOfClusters];
 	jint* nearestCentroid;
 	jint* bestNearestCentroid;
-	jdouble currentDistance;//currently calculated distance to a centroid
+	jdouble currentDistance; //currently calculated distance to a centroid
 	jdouble prevDistance;//previously calculated best distance to a centroid
 	jdouble currentMeanDist;//current mean distance within a cluster
 	jdouble evaluatedError;//the best value of error
-	jdouble xRatio;//scale coefficient
+	jdouble yRatio;//scale coefficient
 	jdouble delta;//current delta between current delta and mean distance within cluster
 	jint divider,histMax,tmp;
 	unsigned char intensityVal;
@@ -525,35 +549,35 @@ JNIEXPORT void JNICALL Java_com_example_imgprocessinglab_ImgProcessor_clusterize
 	(unsigned char*)pImg;
 	(unsigned char*)pClust;
 	histMax=pHist[0];
-	for(histCounter=0;histCounter<histSize;histCounter++){if(pHist[histCounter]>histMax){histMax=pHist[histCounter];}}
-	xRatio=((jdouble)histMax)/histSize-1;
+	for(histCounter=0;histCounter<histSize;histCounter++) {if(pHist[histCounter]>histMax) {histMax=pHist[histCounter];}}
+	yRatio=((jdouble)histMax)/(histSize-1);
 	evaluatedError=DBL_MAX;
-	for(experimentCounter=0;experimentCounter<numOfExperiments;experimentCounter++){
+	for(experimentCounter=0;experimentCounter<numOfExperiments;experimentCounter++) {
 		srand(time(NULL));tmp=0;
 		//initialize centroids randomly
 		initRandArray(numOfClusters,histSize,centroids);
-		do{		//calculate nearest centroid for each intensity value
-			for(imgCounter=shift;imgCounter<imgSize;imgCounter+=4){
+		do {		//calculate nearest centroid for each intensity value
+			for(imgCounter=shift;imgCounter<imgSize;imgCounter+=4) {
 				currentDistance=0.0;
 				prevDistance=DBL_MAX;
-				for(centroidsCounter=0;centroidsCounter<numOfClusters;centroidsCounter++){
-					//currentDistance=calcDistance(histCounter*xRatio,centroids[centroidsCounter]*xRatio,pHist[histCounter],pHist[centroids[centroidsCounter]]);
+				for(centroidsCounter=0;centroidsCounter<numOfClusters;centroidsCounter++) {
+					//currentDistance=calcDistance(histCounter*yRatio,centroids[centroidsCounter]*yRatio,pHist[histCounter],pHist[centroids[centroidsCounter]]);
 					intensityVal=pImg[imgCounter];
 					currentDistance=fabs(intensityVal-centroids[centroidsCounter]);
-					if(prevDistance-currentDistance>0.001){
+					if(prevDistance-currentDistance>0.001) {
 						prevDistance=currentDistance;
 						nearestCentroid[imgCounter]=centroids[centroidsCounter];
 					}
 				}
 			}
-		//move centroid to the new best position
-			for(centroidsCounter=0;centroidsCounter<numOfClusters;centroidsCounter++){
+			//move centroid to the new best position
+			for(centroidsCounter=0;centroidsCounter<numOfClusters;centroidsCounter++) {
 				oldcentroids[centroidsCounter]=centroids[centroidsCounter];
 				currentMeanDist=0.0;
 				divider=0;
-				for(imgCounter=shift;imgCounter<imgSize;imgCounter+=4){
-					if(centroids[centroidsCounter]==nearestCentroid[imgCounter]){
-						//currentMeanDist+=calcDistance(centroids[centroidsCounter]*xRatio,histCounter*xRatio,pHist[centroids[centroidsCounter]],pHist[histCounter]);
+				for(imgCounter=shift;imgCounter<imgSize;imgCounter+=4) {
+					if(centroids[centroidsCounter]==nearestCentroid[imgCounter]) {
+						//currentMeanDist+=calcDistance(centroids[centroidsCounter]*yRatio,histCounter*yRatio,pHist[centroids[centroidsCounter]],pHist[histCounter]);
 						intensityVal=pImg[imgCounter];
 						currentMeanDist+=fabs(centroids[centroidsCounter]-intensityVal);
 						divider++;
@@ -562,11 +586,11 @@ JNIEXPORT void JNICALL Java_com_example_imgprocessinglab_ImgProcessor_clusterize
 				currentMeanDist/=divider;
 				delta=DBL_MAX;
 				//calculate the best new position for centroid
-				for(imgCounter=shift;imgCounter<imgSize;imgCounter+=4){
-					if(centroids[centroidsCounter]==nearestCentroid[imgCounter]){
+				for(imgCounter=shift;imgCounter<imgSize;imgCounter+=4) {
+					if(centroids[centroidsCounter]==nearestCentroid[imgCounter]) {
 						intensityVal=pImg[imgCounter];
-						if(fabs(currentMeanDist-intensityVal/*calcDistance(centroids[centroidsCounter]*xRatio,histCounter*xRatio,pHist[centroids[centroidsCounter]],pHist[histCounter])*/)-delta>0.001){
-							delta=fabs(currentMeanDist-intensityVal/*calcDistance(centroids[centroidsCounter]*xRatio,histCounter*xRatio,pHist[centroids[centroidsCounter]],pHist[histCounter])*/);
+						if(fabs(currentMeanDist-intensityVal/*calcDistance(centroids[centroidsCounter]*yRatio,histCounter*yRatio,pHist[centroids[centroidsCounter]],pHist[histCounter])*/)-delta>0.001) {
+							delta=fabs(currentMeanDist-intensityVal/*calcDistance(centroids[centroidsCounter]*yRatio,histCounter*yRatio,pHist[centroids[centroidsCounter]],pHist[histCounter])*/);
 							centroids[centroidsCounter]=intensityVal;
 						}
 					}
@@ -574,20 +598,20 @@ JNIEXPORT void JNICALL Java_com_example_imgprocessinglab_ImgProcessor_clusterize
 			}
 			tmp++;
 		}while(!compareClusters(centroids,oldcentroids,numOfClusters));
-		if(evaluatedError-evaluateErrorLinear(imgSize,pImg,nearestCentroid)>0.001){
+		if(evaluatedError-evaluateErrorLinear(imgSize,pImg,nearestCentroid)>0.001) {
 			evaluatedError=evaluateErrorLinear(imgSize,pImg,nearestCentroid);
-			for(imgCounter=shift;imgCounter<imgSize;imgCounter+=4){bestNearestCentroid[imgCounter]=nearestCentroid[imgCounter];}
-			for(centroidsCounter=0;centroidsCounter<numOfClusters;centroidsCounter++){bestCentroids[centroidsCounter]=centroids[centroidsCounter];}
+			for(imgCounter=shift;imgCounter<imgSize;imgCounter+=4) {bestNearestCentroid[imgCounter]=nearestCentroid[imgCounter];}
+			for(centroidsCounter=0;centroidsCounter<numOfClusters;centroidsCounter++) {bestCentroids[centroidsCounter]=centroids[centroidsCounter];}
 		}
 	}
-	for(centroidsCounter=0;centroidsCounter<numOfClusters;centroidsCounter++){
-	__android_log_print(ANDROID_LOG_DEBUG, "NativeFunction", "best centroid is %d",bestCentroids[centroidsCounter]);//Or ANDROID_LOG_INFO, ..	
+	for(centroidsCounter=0;centroidsCounter<numOfClusters;centroidsCounter++) {
+		__android_log_print(ANDROID_LOG_DEBUG, "NativeFunction", "best centroid is %d",bestCentroids[centroidsCounter]);//Or ANDROID_LOG_INFO, ..
 	}
 
-	for(imgCounter=shift;imgCounter<imgSize;imgCounter+=4){
+	for(imgCounter=shift;imgCounter<imgSize;imgCounter+=4) {
 		intensityValue=(jint)pImg[imgCounter];
 		pClust[imgCounter]=(unsigned char)(bestNearestCentroid[imgCounter]);
-		}
+	}
 	free(nearestCentroid);
 	free(bestNearestCentroid);
 	(jbyte*)pImg;
@@ -597,17 +621,293 @@ JNIEXPORT void JNICALL Java_com_example_imgprocessinglab_ImgProcessor_clusterize
 	(*env)->ReleaseIntArrayElements(env,hist,pHist,0);
 }
 
-jdouble calcDistance(jdouble x1,jdouble x2,jdouble y1,jdouble y2){
-return sqrt((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2));
+JNIEXPORT void JNICALL Java_com_example_imgprocessinglab_ImgProcessor_discreteHaarTransform
+(JNIEnv *env, jclass obj, jbyteArray img, jbyteArray transformed, jint width, jint height) {
+	jsize imgSize,transformedSize;
+	jbyte *pImg, *pTransformed;
+	imgSize=(*env)->GetArrayLength(env,img);
+	transformedSize=(*env)->GetArrayLength(env,transformed);
+	pImg=(*env)->GetByteArrayElements(env,img,0);
+	pTransformed=(*env)->GetByteArrayElements(env,transformed,0);
+	jfloat *mLHaarMatrix = malloc(height*height*sizeof(jfloat));
+	jfloat *mRHaarMatrix = malloc(width*width*sizeof(jfloat));
+	jfloat* mTmpMatrix = malloc(height*width*sizeof(jfloat));
+	jfloat* mTmpResult;
+	jfloat* mResult;
+	jint i,j;
+	generateHaarMatrix(height,height,mLHaarMatrix);
+	generateHaarMatrix(width,width,mRHaarMatrix);
+	transposeMatrix(width,width,mRHaarMatrix);
+	//__android_log_write(ANDROID_LOG_DEBUG, "NativeFunction", "Generated and transposed successfully");//Or ANDROID_LOG_INFO, ..
+	for(i=0;i<height;i++) {
+		for(j=0;j<width;j++) {
+			mTmpMatrix[i*width+j] = (jfloat)(pImg[i*(4*width)+j*4+1]&0xff);
+		}
+	}
+	//__android_log_write(ANDROID_LOG_DEBUG, "NativeFunction", "mTmp initialized successfully");//Or ANDROID_LOG_INFO, ..
+	mTmpResult = multiplySubmatrices(mLHaarMatrix,height,height,mTmpMatrix,height,width);
+	//__android_log_write(ANDROID_LOG_DEBUG, "NativeFunction", "1st multiplicated successfully");//Or ANDROID_LOG_INFO, ..
+	mResult = multiplySubmatrices(mTmpResult,height,width,mRHaarMatrix,width,width);
+	//__android_log_write(ANDROID_LOG_DEBUG, "NativeFunction", "Multiplicated successfully");//Or ANDROID_LOG_INFO, ..
+	for(i=0;i<height;i++) {
+		for(j=0;j<width;j++) {
+			if(mResult[i*width+j]<(jfloat)0.01) {mResult[i*width+j]=(jfloat)0.0;}
+			if(mResult[i*width+j]-(jfloat)255.0>0.00001) {mResult[i*width+j] = (jfloat)255.0;}
+			pTransformed[i*4*width+j*4+1]=pTransformed[i*4*width+j*4+2]=pTransformed[i*4*width+j*4+3] = (jbyte)(mResult[i*width+j]);
+		}
+	}
+
+	(*env)->ReleaseByteArrayElements(env,img,pImg,0);
+	(*env)->ReleaseByteArrayElements(env,transformed,pTransformed,0);
+
 }
-jboolean compareClusters(jint newcentroids[],jint oldcentroids[],jint size){
+
+JNIEXPORT void JNICALL Java_com_example_imgprocessinglab_ImgProcessor_undoDiscreteHaarTransform
+(JNIEnv *env, jclass obj, jbyteArray img, jbyteArray transformed, jint width, jint height) {
+	jsize imgSize,transformedSize;
+	jbyte *pImg, *pTransformed;
+	imgSize=(*env)->GetArrayLength(env,img);
+	transformedSize=(*env)->GetArrayLength(env,transformed);
+	pImg=(*env)->GetByteArrayElements(env,img,0);
+	pTransformed=(*env)->GetByteArrayElements(env,transformed,0);
+	jfloat *mLHaarMatrix = malloc(height*height*sizeof(jfloat));
+	jfloat *mRHaarMatrix = malloc(width*width*sizeof(jfloat));
+	jfloat* mTmpMatrix = malloc(height*width*sizeof(jfloat));
+	jfloat* mTmpResult;
+	jfloat* mResult;
+	jint i,j;
+	generateHaarMatrix(height,height,mLHaarMatrix);
+	generateHaarMatrix(width,width,mRHaarMatrix);
+	transposeMatrix(height,height,mLHaarMatrix);
+	//__android_log_write(ANDROID_LOG_DEBUG, "NativeFunction", "Generated and transposed successfully");//Or ANDROID_LOG_INFO, ..
+	for(i=0;i<height;i++) {
+		for(j=0;j<width;j++) {
+			mTmpMatrix[i*width+j] = (jfloat)(pImg[i*(4*width)+j*4+1]&0xff);
+		}
+	}
+	//__android_log_write(ANDROID_LOG_DEBUG, "NativeFunction", "mTmp initialized successfully");//Or ANDROID_LOG_INFO, ..
+	mTmpResult = multiplySubmatrices(mLHaarMatrix,height,height,mTmpMatrix,height,width);
+	//__android_log_write(ANDROID_LOG_DEBUG, "NativeFunction", "1st multiplicated successfully");//Or ANDROID_LOG_INFO, ..
+	mResult = multiplySubmatrices(mTmpResult,height,width,mRHaarMatrix,width,width);
+	//__android_log_write(ANDROID_LOG_DEBUG, "NativeFunction", "Multiplicated successfully");//Or ANDROID_LOG_INFO, ..
+	for(i=0;i<height;i++) {
+		for(j=0;j<width;j++) {
+			mResult[i*width+j]*=4;
+			if(mResult[i*width+j]<(jfloat)0.01) {mResult[i*width+j]=(jfloat)0.0;}
+			if(mResult[i*width+j]-(jfloat)255.0>0.00001) {mResult[i*width+j] = (jfloat)255.0;}
+			pTransformed[i*4*width+j*4+1]=pTransformed[i*4*width+j*4+2]=pTransformed[i*4*width+j*4+3] = (jbyte)(mResult[i*width+j]);
+		}
+	}
+	(*env)->ReleaseByteArrayElements(env,img,pImg,0);
+	(*env)->ReleaseByteArrayElements(env,transformed,pTransformed,0);
+}
+
+JNIEXPORT void JNICALL Java_com_example_imgprocessinglab_ImgProcessor_buildEntropyHistogram
+(JNIEnv * env, jobject obj, jintArray hist,jfloatArray builthist, jint width, jint height) {
+	jint i, size;
+	jlong mean,divider;
+	jint* pHist;
+	jfloat* pBuiltHist;
+	jfloat lg2;
+	jsize arraySize,builtHistSize;
+	arraySize=(*env)->GetArrayLength(env,hist);
+	builtHistSize=(*env)->GetArrayLength(env,builthist);
+	pHist=(*env)->GetIntArrayElements(env,hist,0);
+	pBuiltHist=(*env)->GetFloatArrayElements(env,builthist,0);
+	lg2 = log(2);
+	if(pBuiltHist!=NULL) {
+		for(i=0;i<arraySize;i++) {
+			if(pHist[i]>0.0){
+			pBuiltHist[i] = fabsf(pHist[i]*log(pHist[i])/lg2);
+			} else {
+				pBuiltHist[i] = 0.0;
+			}
+		}
+	}
+	(*env)->ReleaseIntArrayElements(env, hist, pHist, 0);
+	(*env)->ReleaseFloatArrayElements(env, builthist, pBuiltHist, 0);
+}
+
+JNIEXPORT void JNICALL Java_com_example_imgprocessinglab_ImgProcessor_clusterizeKMeansHistogram
+(JNIEnv *env, jclass obj, jbyteArray img, jbyteArray clusterized,jfloatArray hist,jint numOfClusters) {
+	jsize imgSize,clustSize,histSize;
+	jfloat* pHist;
+	jbyte* pImg,* pClust;
+	jint numOfExperiments=10;
+	jint centroidsCounter,imgCounter,experimentCounter,histCounter;
+	jint centroids[numOfClusters];
+	jint oldcentroids[numOfClusters];
+	jint bestCentroids[numOfClusters];
+	jint tmpCentroid, iterCounter;
+	jint* nearestCentroid;
+	jint* bestNearestCentroid;
+	jdouble currentDistance;	//currently calculated distance to a centroid
+	jdouble prevDistance;//previously calculated best distance to a centroid
+	jint currentMeanWeight;
+	jdouble evaluatedError;//the best value of error
+	jdouble yRatio;//scale coefficient
+	jdouble delta;//current delta between current delta and mean distance within cluster
+	jint divider,tmp;
+	jfloat histMax;
+	imgSize=(*env)->GetArrayLength(env,img);
+	clustSize=(*env)->GetArrayLength(env,clusterized);
+	histSize=(*env)->GetArrayLength(env,hist);
+	pImg=(*env)->GetByteArrayElements(env,img,0);
+	pClust=(*env)->GetByteArrayElements(env,clusterized,0);
+	pHist=(*env)->GetFloatArrayElements(env,hist,0);
+	nearestCentroid=malloc(histSize*sizeof(int));
+	bestNearestCentroid=malloc(histSize*sizeof(int));
+	histMax=pHist[0];
+	for(histCounter=0;histCounter<histSize;histCounter++) {if(pHist[histCounter]-histMax>0.00001) {histMax=pHist[histCounter];}}
+	yRatio=(histSize-1)/(histMax);
+	evaluatedError=DBL_MAX;
+	for(experimentCounter=0;experimentCounter<numOfExperiments;experimentCounter++) {
+	srand(time(NULL));tmp=0;
+	//initialize centroids randomly
+	iterCounter = 0;
+	initRandArray(numOfClusters,histSize,centroids);
+	do {		//calculate nearest centroid for each intensity value
+		for(histCounter=0;histCounter<histSize;histCounter++) {
+			currentDistance=0.0;
+			prevDistance=DBL_MAX;
+			for(centroidsCounter=0;centroidsCounter<numOfClusters;centroidsCounter++) {
+				currentDistance=calcDistance(histCounter,pHist[histCounter]*yRatio,centroids[centroidsCounter],pHist[centroids[centroidsCounter]]*yRatio);
+				if(prevDistance-currentDistance>0.001) {
+					prevDistance=currentDistance;
+					nearestCentroid[histCounter]=centroids[centroidsCounter];
+				}
+			}
+		}
+		for(centroidsCounter=0;centroidsCounter<numOfClusters;centroidsCounter++) {
+			oldcentroids[centroidsCounter] = centroids[centroidsCounter];
+			divider = 0;
+			currentMeanWeight = 0;
+			for(histCounter = 0;histCounter<histSize;histCounter++) {
+				if(nearestCentroid[histCounter]==centroids[centroidsCounter]){
+					divider++;
+					currentMeanWeight+=histCounter;
+				}
+			}
+			currentMeanWeight/=divider;
+			centroids[centroidsCounter] = currentMeanWeight;
+			}
+		iterCounter++;
+		}while(!compareClusters(centroids,oldcentroids,numOfClusters)&&(iterCounter<50));
+		if(evaluatedError-evaluateError(histSize,pHist,nearestCentroid,yRatio)>0.001) {
+		evaluatedError=evaluateError(histSize,pHist,nearestCentroid,yRatio);
+		for(centroidsCounter=0;centroidsCounter<numOfClusters;centroidsCounter++) {bestCentroids[centroidsCounter]=centroids[centroidsCounter];}
+		for(histCounter=0;histCounter<histSize;histCounter++) {bestNearestCentroid[histCounter]=nearestCentroid[histCounter];}
+		}
+	}
+	for(centroidsCounter=0;centroidsCounter<numOfClusters;centroidsCounter++){
+		__android_log_print(ANDROID_LOG_DEBUG, "KMeansHist", "centroid is %d",bestCentroids[centroidsCounter]);//Or ANDROID_LOG_INFO, ..
+	}
+	(unsigned char*)pImg;
+	(unsigned char*)pClust;
+	for(tmp=1;tmp<imgSize;tmp+=4){
+		pClust[tmp] = pClust[tmp+1] = pClust[tmp+2] = bestNearestCentroid[(pImg[tmp]&0xff)];
+	}
+	free(nearestCentroid);
+	free(bestNearestCentroid);
+	(jbyte*)pImg;
+	(jbyte*)pClust;
+	(*env)->ReleaseByteArrayElements(env,img,pImg,0);
+	(*env)->ReleaseByteArrayElements(env,clusterized,pClust,0);
+	(*env)->ReleaseFloatArrayElements(env,hist,pHist,0);
+}
+
+JNIEXPORT void JNICALL Java_com_example_imgprocessinglab_ImgProcessor_buildEnergyHistogram
+(JNIEnv * env, jobject obj, jintArray hist,jfloatArray builthist, jint width, jint height){
+	jint i, size;
+		jlong mean,divider;
+		jint* pHist;
+		jfloat* pBuiltHist;
+		jfloat lg2;
+		jsize arraySize,builtHistSize;
+		arraySize=(*env)->GetArrayLength(env,hist);
+		builtHistSize=(*env)->GetArrayLength(env,builthist);
+		pHist=(*env)->GetIntArrayElements(env,hist,0);
+		pBuiltHist=(*env)->GetFloatArrayElements(env,builthist,0);
+		size = width*height;
+		lg2 = log(2);
+		if(pBuiltHist!=NULL) {
+			for(i=0;i<arraySize;i++) {
+				pBuiltHist[i] = ((jfloat)pHist[i])*(pHist[i]);
+			}
+		}
+		(*env)->ReleaseIntArrayElements(env, hist, pHist, 0);
+		(*env)->ReleaseFloatArrayElements(env, builthist, pBuiltHist, 0);
+}
+
+JNIEXPORT void JNICALL Java_com_example_imgprocessinglab_ImgProcessor_buildKurtosisHistogram
+(JNIEnv * env, jobject obj, jintArray hist,jfloatArray builthist, jint width, jint height){
+	jint i, size;
+		jfloat mean, variance;
+		jint* pHist;
+		jfloat* pBuiltHist;
+		jsize arraySize,builtHistSize;
+		arraySize=(*env)->GetArrayLength(env,hist);
+		builtHistSize=(*env)->GetArrayLength(env,builthist);
+		pHist=(*env)->GetIntArrayElements(env,hist,0);
+		pBuiltHist=(*env)->GetFloatArrayElements(env,builthist,0);
+		size = width*height;
+		mean = variance = 0.0;
+			for(i=0;i<arraySize;i++) {
+				mean+=i*pHist[i];
+			}
+			mean/=size;
+			for(i=0;i<arraySize;i++) {
+				variance+=(i-mean)*(i-mean)*pHist[i];
+			}
+			variance/=size;
+			for(i=0;i<arraySize;i++) {
+				pBuiltHist[i] = fabsf((pow(i-mean,4)*pHist[i]/variance/variance -((jfloat)3)/arraySize));
+				__android_log_print(ANDROID_LOG_DEBUG, "KurtosisHistogram", "pBuiltHist[%d] is %f",i,pBuiltHist[i]);
+			}
+		(*env)->ReleaseIntArrayElements(env, hist, pHist, 0);
+		(*env)->ReleaseFloatArrayElements(env, builthist, pBuiltHist, 0);
+}
+
+JNIEXPORT void JNICALL Java_com_example_imgprocessinglab_ImgProcessor_smoothHistogramFloat
+(JNIEnv * env, jobject obj, jfloatArray hist,jfloatArray smoothedhist, jint size) {
+	jint i,j,divider;
+	jfloat mean;
+	jfloat* pHist;
+	jfloat* pSmoothedHist;
+	jsize arraySize,smoothedArraySize;
+	arraySize=(*env)->GetArrayLength(env,hist);
+	smoothedArraySize=(*env)->GetArrayLength(env,smoothedhist);
+	pHist=(*env)->GetFloatArrayElements(env,hist,0);
+	pSmoothedHist=(*env)->GetFloatArrayElements(env,smoothedhist,0);
+	if(pSmoothedHist!=NULL) {
+		for(i=0;i<arraySize;i++) {
+			mean=pHist[i];
+			divider=1;
+			for(j=1;j<(size/2)+1;j++) {
+				if(i+j<arraySize) {mean+=pHist[i+j];divider++;}
+				if(i-j>=0) {mean+=pHist[i-j];divider++;}
+			}
+			if(divider>0) {
+				pSmoothedHist[i]=(jint)(mean/divider);
+			}
+		}
+	}
+	(*env)->ReleaseFloatArrayElements(env, hist, pHist, 0);
+	(*env)->ReleaseFloatArrayElements(env, smoothedhist, pSmoothedHist, 0);
+}
+jdouble calcDistance(jdouble x1, jdouble y1, jdouble x2, jdouble y2) {
+	return sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
+}
+jboolean compareClusters(jint newcentroids[], jint oldcentroids[], jint size) {
 	jint i;
-	for(i=0;i<size;i++){
-		if(newcentroids[i]!=oldcentroids[i]){return false;}
+	for (i = 0; i < size; i++) {
+		if (newcentroids[i] != oldcentroids[i]) {
+			return false;
+		}
 	}
 	return true;
 }
-void initRandArray(jint numOfClusters,jint sizeOfArr ,jint centroids[]) {
+void initRandArray(jint numOfClusters, jint sizeOfArr, jint centroids[]) {
 	jint i, counter;
 	jint flag;
 	srand(time(NULL));
@@ -627,52 +927,54 @@ void initRandArray(jint numOfClusters,jint sizeOfArr ,jint centroids[]) {
 	}
 }
 
-
-
-jdouble evaluateError(jint histSize,jint pHist[],jint* nearestCentroid,jdouble xRatio){
+jdouble evaluateError(jint histSize, jfloat pHist[], jint* nearestCentroid, jdouble yRatio) {
 	jint i;
-	jdouble error=0.0;
-	for(i=0;i<histSize;i++){
-		error+=calcDistance(i*xRatio,nearestCentroid[i]*xRatio,pHist[i],pHist[nearestCentroid[i]]);
+	jdouble error = 0.0;
+	for (i = 0; i < histSize; i++) {
+		error += calcDistance(i , pHist[i]*yRatio, nearestCentroid[i], pHist[nearestCentroid[i]]*yRatio);
 	}
-	return error/histSize;
+	return error / histSize;
 }
 
-jdouble evaluateErrorLinear(jint imgSize,jbyte* pImg,jint* nearestCentroid){
+jdouble evaluateErrorLinear(jint imgSize, jbyte* pImg, jint* nearestCentroid) {
 	jint i;
-	jdouble error=0.0;
-	for(i=0;i<imgSize;i++){
-		error+=fabs(((unsigned char)pImg[i]%256)-nearestCentroid[i]);
+	jdouble error = 0.0;
+	for (i = 0; i < imgSize; i++) {
+		error += fabs(((unsigned char) pImg[i] % 256) - nearestCentroid[i]);
 	}
-	return error/imgSize;
+	return error / imgSize;
 }
-jint findLocalMin(jint start,jint pHist[],jint histSize){
+jint findLocalMin(jint start, jint pHist[], jint histSize) {
 	jint i;
-	for(i=start;i<histSize;i++){
-		if((i+1<histSize)){
-			if(pHist[i+1]>pHist[i]){return i;}
+	for (i = start; i < histSize; i++) {
+		if ((i + 1 < histSize)) {
+			if (pHist[i + 1] > pHist[i]) {
+				return i;
+			}
+		} else {
+			return histSize - 1;
 		}
-		else{return histSize-1;}
-	}	
+	}
 }
-jfloat* getPeaksMeasures(jint pHist[],jint histSize,jint* finalsize){
-	jfloat peaks[4*256];
-	jfloat threshold,max;
+jfloat* getPeaksMeasures(jint pHist[], jint histSize, jint* finalsize) {
+	jfloat peaks[4 * 256];
+	jfloat threshold, max;
 	jfloat *filteredPeaks;
-	jint i,flag,curLeftBorder,curRightBorder,curTop,result,weight,tmpcount,numOfPeaks;
+	jint i, flag, curLeftBorder, curRightBorder, curTop, result, weight,
+			tmpcount, numOfPeaks;
 	curTop = pHist[0];
 	i = 1;
 	curLeftBorder = 0;
 	curRightBorder = 0;
 	result = 0;
-	numOfPeaks=0;
+	numOfPeaks = 0;
 	while (i < histSize) {
 		if (pHist[i] >= curTop) {
 			curTop = pHist[i];
 			peaks[numOfPeaks * 4] = i;
 			flag = 0;
 		} else {
-			curRightBorder = findLocalMin(i,pHist,histSize);
+			curRightBorder = findLocalMin(i, pHist, histSize);
 			peaks[numOfPeaks * 4 + 1] = curLeftBorder;
 			peaks[numOfPeaks * 4 + 2] = curRightBorder;
 			weight = 0;
@@ -680,12 +982,19 @@ jfloat* getPeaksMeasures(jint pHist[],jint histSize,jint* finalsize){
 					tmpcount++) {
 				weight += pHist[tmpcount];
 			}
-			peaks[numOfPeaks * 4 + 3] =(1 - (pHist[curLeftBorder] + pHist[curRightBorder]) / (2 * curTop))* (1- weight/ ((curRightBorder - curLeftBorder)* curTop) );
+			peaks[numOfPeaks * 4 + 3] =
+					(1
+							- (pHist[curLeftBorder] + pHist[curRightBorder])
+									/ (2 * curTop))
+							* (1
+									- weight
+											/ ((curRightBorder - curLeftBorder)
+													* curTop));
 			curLeftBorder = curRightBorder;
 			curTop = pHist[curLeftBorder];
 			numOfPeaks++;
 			flag = 1;
-			i=curLeftBorder;
+			i = curLeftBorder;
 		}
 		i++;
 	}
@@ -693,27 +1002,101 @@ jfloat* getPeaksMeasures(jint pHist[],jint histSize,jint* finalsize){
 		numOfPeaks++;
 	}
 	threshold = 0;
-	max=0.0;
-	for (i = 0; i < numOfPeaks; i ++ ) {
-		threshold += peaks[i*4 + 3];
-		if(peaks[i*4+3]>max){max=peaks[i*4+3];}
+	max = 0.0;
+	for (i = 0; i < numOfPeaks; i++) {
+		threshold += peaks[i * 4 + 3];
+		if (peaks[i * 4 + 3] > max) {
+			max = peaks[i * 4 + 3];
+		}
 	}
 	threshold /= numOfPeaks;
-	threshold+=(max-threshold)*0.7;
+	threshold += (max - threshold) * 0.7;
 	//threshold *= 0.6;
-	for (i = 0; i < numOfPeaks; i ++) {
-		if (peaks[4*i + 3] > threshold) {
+	for (i = 0; i < numOfPeaks; i++) {
+		if (peaks[4 * i + 3] > threshold) {
 			result++;
 		}
 	}
-	tmpcount=0;
-	filteredPeaks=malloc(result*sizeof(jfloat));
-	for (i = 0; i < numOfPeaks; i ++) {
-		if (peaks[4*i + 3] > threshold) {
-			filteredPeaks[tmpcount]=peaks[4*i+3];
+	tmpcount = 0;
+	filteredPeaks = malloc(result * sizeof(jfloat));
+	for (i = 0; i < numOfPeaks; i++) {
+		if (peaks[4 * i + 3] > threshold) {
+			filteredPeaks[tmpcount] = peaks[4 * i + 3];
 			tmpcount++;
 		}
 	}
-	*finalsize=tmpcount;
+	*finalsize = tmpcount;
 	return filteredPeaks;
 }
+void transposeMatrix(jint width, jint height, jfloat matrix[]) {
+
+	jint i, j;
+	jfloat tmp;
+	for (i = 0; i < height; i++) {
+		for (j = i; j < width; j++) {
+			tmp = matrix[i * width + j];
+			matrix[i * width + j] = matrix[j * width + i];
+			matrix[j * width + i] = tmp;
+		}
+	}
+}
+void generateHaarMatrix(jint width, jint height, jfloat matrix[]) {
+	jint j, i;
+	jfloat coef = sqrt(2) / 2;
+	for (i = 0; i < width * height; i++) {
+		matrix[i] = 0;
+	}
+	i = 0;
+	for (j = 0; j < height / 2; j++) {
+		matrix[j * width + i] = coef;
+		i++;
+		matrix[j * width + i] = coef;
+		i++;
+	}
+	i = 0;
+	for (j = height / 2; j < height; j++) {
+		matrix[j * width + i] = -coef;
+		i++;
+		matrix[j * width + i] = coef;
+		i++;
+	}
+}
+jfloat multiplication(jfloat row[], jfloat column[], jint length) {
+	jfloat res, coef;
+	jint i;
+	res = (jfloat) 0.0;
+	coef = (jfloat) sqrt(2);
+	for (i = 0; i < length; i++) {
+		res += row[i] * column[i];
+	}
+	res /= coef;
+	if (res < (jfloat) 0.01) {
+		res = (jfloat)(0.0);
+	}
+	if (res - (jfloat) 254.99 > 0.00001) {
+		res = (jfloat) 255.0;
+	}
+	return res;
+}
+jfloat* multiplySubmatrices(jfloat matA[], jint numOfRowsA, jint numOfColsA,
+		jfloat matB[], jint numOfRowsB, jint numOfColsB) {
+	jint i, j, k, counter;
+	jfloat row[numOfColsA];
+	jfloat col[numOfRowsB];
+	jfloat* result = malloc(numOfRowsA * numOfColsB * sizeof(jfloat));
+	counter = 0;
+	for (i = 0; i < numOfRowsA; i++) {
+		for (j = 0; j < numOfColsB; j++) {
+			for (k = 0; k < numOfColsA; k++) {
+				row[k] = matA[i * numOfColsA + k];
+				col[k] = matB[k * numOfColsB + j];
+			}
+			//memcpy(row,matA+i*length,length);
+			//memcpy(col,matB+j*length,length);
+			result[counter] = multiplication(row, col, numOfColsA);
+			counter++;
+		}
+	}
+	return result;
+}
+

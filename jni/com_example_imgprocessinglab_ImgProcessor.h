@@ -71,6 +71,62 @@ JNIEXPORT jint JNICALL Java_com_example_imgprocessinglab_ImgProcessor_getNumberO
 JNIEXPORT void JNICALL Java_com_example_imgprocessinglab_ImgProcessor_clusterizeKMeans
   (JNIEnv *, jclass, jbyteArray, jbyteArray, jintArray, jint, jint);
 
+/*
+ * Class:     com_example_imgprocessinglab_ImgProcessor
+ * Method:    discreteHaarTransform
+ * Signature: ([B[BII)V
+ */
+JNIEXPORT void JNICALL Java_com_example_imgprocessinglab_ImgProcessor_discreteHaarTransform
+  (JNIEnv *, jclass, jbyteArray, jbyteArray, jint, jint);
+
+/*
+ * Class:     com_example_imgprocessinglab_ImgProcessor
+ * Method:    undoDiscreteHaarTransform
+ * Signature: ([B[BII)V
+ */
+JNIEXPORT void JNICALL Java_com_example_imgprocessinglab_ImgProcessor_undoDiscreteHaarTransform
+  (JNIEnv *, jclass, jbyteArray, jbyteArray, jint, jint);
+
+/*
+ * Class:     com_example_imgprocessinglab_ImgProcessor
+ * Method:    buildEntropyHistogram
+ * Signature: ([I[FII)V
+ */
+JNIEXPORT void JNICALL Java_com_example_imgprocessinglab_ImgProcessor_buildEntropyHistogram
+  (JNIEnv *, jclass, jintArray, jfloatArray, jint, jint);
+
+/*
+ * Class:     com_example_imgprocessinglab_ImgProcessor
+ * Method:    clusterizeKMeansHistogram
+ * Signature: ([B[B[FI)V
+ */
+JNIEXPORT void JNICALL Java_com_example_imgprocessinglab_ImgProcessor_clusterizeKMeansHistogram
+  (JNIEnv *, jclass, jbyteArray, jbyteArray, jfloatArray, jint);
+
+/*
+ * Class:     com_example_imgprocessinglab_ImgProcessor
+ * Method:    smoothHistogramFloat
+ * Signature: ([F[FI)V
+ */
+JNIEXPORT void JNICALL Java_com_example_imgprocessinglab_ImgProcessor_smoothHistogramFloat
+  (JNIEnv *, jclass, jfloatArray, jfloatArray, jint);
+
+/*
+ * Class:     com_example_imgprocessinglab_ImgProcessor
+ * Method:    buildEnergyHistogram
+ * Signature: ([I[FII)V
+ */
+JNIEXPORT void JNICALL Java_com_example_imgprocessinglab_ImgProcessor_buildEnergyHistogram
+  (JNIEnv *, jclass, jintArray, jfloatArray, jint, jint);
+
+/*
+ * Class:     com_example_imgprocessinglab_ImgProcessor
+ * Method:    buildKurtosisHistogram
+ * Signature: ([I[FII)V
+ */
+JNIEXPORT void JNICALL Java_com_example_imgprocessinglab_ImgProcessor_buildKurtosisHistogram
+  (JNIEnv *, jclass, jintArray, jfloatArray, jint, jint);
+
 #ifdef __cplusplus
 }
 #endif
